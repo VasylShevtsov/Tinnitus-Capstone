@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E1D70AF22EB96FB00012135D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF12EB96FB00012135D /* Auth */; };
+		E1D70AF42EB96FB00012135D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF32EB96FB00012135D /* Functions */; };
+		E1D70AF62EB96FB00012135D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF52EB96FB00012135D /* PostgREST */; };
+		E1D70AF82EB96FB00012135D /* Realtime in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF72EB96FB00012135D /* Realtime */; };
+		E1D70AFA2EB96FB00012135D /* Storage in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF92EB96FB00012135D /* Storage */; };
+		E1D70AFC2EB96FB00012135D /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AFB2EB96FB00012135D /* Supabase */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		E16CCBAB2E921BA10075B590 /* Tinnitus Capstone.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Tinnitus Capstone.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +32,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1D70AF62EB96FB00012135D /* PostgREST in Frameworks */,
+				E1D70AF42EB96FB00012135D /* Functions in Frameworks */,
+				E1D70AFC2EB96FB00012135D /* Supabase in Frameworks */,
+				E1D70AF22EB96FB00012135D /* Auth in Frameworks */,
+				E1D70AFA2EB96FB00012135D /* Storage in Frameworks */,
+				E1D70AF82EB96FB00012135D /* Realtime in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +80,12 @@
 			);
 			name = "Tinnitus Capstone";
 			packageProductDependencies = (
+				E1D70AF12EB96FB00012135D /* Auth */,
+				E1D70AF32EB96FB00012135D /* Functions */,
+				E1D70AF52EB96FB00012135D /* PostgREST */,
+				E1D70AF72EB96FB00012135D /* Realtime */,
+				E1D70AF92EB96FB00012135D /* Storage */,
+				E1D70AFB2EB96FB00012135D /* Supabase */,
 			);
 			productName = "Tinnitus Capstone";
 			productReference = E16CCBAB2E921BA10075B590 /* Tinnitus Capstone.app */;
@@ -94,6 +115,9 @@
 			);
 			mainGroup = E16CCBA22E921BA10075B590;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E16CCBAC2E921BA10075B590 /* Products */;
 			projectDirPath = "";
@@ -328,6 +352,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E1D70AF12EB96FB00012135D /* Auth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Auth;
+		};
+		E1D70AF32EB96FB00012135D /* Functions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Functions;
+		};
+		E1D70AF52EB96FB00012135D /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		E1D70AF72EB96FB00012135D /* Realtime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Realtime;
+		};
+		E1D70AF92EB96FB00012135D /* Storage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Storage;
+		};
+		E1D70AFB2EB96FB00012135D /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E16CCBA32E921BA10075B590 /* Project object */;
 }
