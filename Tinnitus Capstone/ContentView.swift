@@ -35,7 +35,8 @@ struct ContentView: View {
             if isLoggedIn { //decides which screen to show
                 HomeView()
             } else {
-                LoudnessMatchView()
+                HomeView()
+                //LoudnessMatchView()
                 //SignUpOrLoginView(isLoggedIn: $isLoggedIn)
             }
         }

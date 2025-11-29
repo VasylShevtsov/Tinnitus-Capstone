@@ -11,6 +11,18 @@ struct HomeView: View {
     
     var body: some View {
             Text("Home View")
+        VStack(spacing: 20)  {
+            Text("Hell Portland")
+                .font(.largeTitle)
+                .bold()
+                .foregroundStyle(Color.blue)
+            
+            TextField("Search", text: .constant(""))
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)   
         }
+    }
     
 }
