@@ -20,11 +20,8 @@ struct LoginView: View {
                 .foregroundColor(Color(red: 0.3, green: 0.3, blue: 0.3))
                 .padding(.bottom, 80)
             
-            // Signup button
-            Button(action: {
-                // Handle signup action
-                print("Signup tapped")
-            }) {
+            // Signup button - navigates to SignUpView
+            NavigationLink(destination: SignUpView()) {
                 Text("Signup")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
@@ -36,7 +33,7 @@ struct LoginView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
             
-            // Login button
+            // Login button - you can add navigation later
             Button(action: {
                 // Handle login action
                 print("Login tapped")
