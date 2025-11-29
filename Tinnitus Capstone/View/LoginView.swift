@@ -1,39 +1,72 @@
 //
-//  Login.swift
+//  LoginView.swift
 //  Tinnitus Capstone
 //
-//  Created by Anika Patel on 11/10/25.
 //
 
-import SwiftUI // this is apples UI framework
-
+import SwiftUI
 
 struct LoginView: View {
     
-    var body: some View{ //this describes what the screen looks like
-        List{ //this creats a scrolling list. handles spacing and grouping
-            Section(header: Text("Login").font(.title2).bold()){
-                HStack{
-                    Text("Name")
-                    Spacer()
-                    Text("your name here").foregroundColor(.secondary) //this creates the placeholder text
-                    
-                }
-                
-                HStack{
-                    Text("Username")
-                    Spacer()
-                    Text("@username").foregroundColor(.secondary)
-                }
-                
-                HStack{
-                    Text("Email")
-                    Spacer()
-                    Text("name@domain.com").foregroundColor(.secondary)
-                }
-            }
+    var body: some View {
+        VStack(spacing: 0) {
+            // Top spacer
+            Spacer()
             
+            // App title (no border)
+            Text("CALM\nTINNITUS")
+                .font(.system(size: 40, weight: .semibold))
+                .multilineTextAlignment(.center)
+                .foregroundColor(Color(red: 0.3, green: 0.3, blue: 0.3))
+                .padding(.bottom, 80)
+            
+            // Signup button
+            Button(action: {
+                // Handle signup action
+                print("Signup tapped")
+            }) {
+                Text("Signup")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.black)
+                    .cornerRadius(8)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+            
+            // Login button
+            Button(action: {
+                // Handle login action
+                print("Login tapped")
+            }) {
+                Text("Login")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.black)
+                    .cornerRadius(8)
+            }
+            .padding(.horizontal, 24)
+            
+            // Bottom spacer
+            Spacer()
+            
+            // Home indicator (bottom bar)
+            Rectangle()
+                .fill(Color.black)
+                .frame(width: 134, height: 5)
+                .cornerRadius(100)
+                .padding(.bottom, 8)
         }
-        
+        .background(Color.white)
+    }
+}
+
+struct LoginView_Previews: PreviewProvider {
+    static var previews: some View {
+        LoginView()
     }
 }
