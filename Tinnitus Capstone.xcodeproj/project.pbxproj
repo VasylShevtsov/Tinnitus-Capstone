@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E1CBDF632EDEDD94005AB9B0 /* ResearchKit in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF622EDEDD94005AB9B0 /* ResearchKit */; };
+		E1CBDF652EDEDD94005AB9B0 /* ResearchKitActiveTask in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF642EDEDD94005AB9B0 /* ResearchKitActiveTask */; };
+		E1CBDF672EDEDD94005AB9B0 /* ResearchKitSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF662EDEDD94005AB9B0 /* ResearchKitSwiftUI */; };
+		E1CBDF692EDEDD94005AB9B0 /* ResearchKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF682EDEDD94005AB9B0 /* ResearchKitUI */; };
 		E1D70AF22EB96FB00012135D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF12EB96FB00012135D /* Auth */; };
 		E1D70AF42EB96FB00012135D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF32EB96FB00012135D /* Functions */; };
 		E1D70AF62EB96FB00012135D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF52EB96FB00012135D /* PostgREST */; };
@@ -32,8 +36,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1CBDF692EDEDD94005AB9B0 /* ResearchKitUI in Frameworks */,
+				E1CBDF672EDEDD94005AB9B0 /* ResearchKitSwiftUI in Frameworks */,
 				E1D70AF62EB96FB00012135D /* PostgREST in Frameworks */,
+				E1CBDF652EDEDD94005AB9B0 /* ResearchKitActiveTask in Frameworks */,
 				E1D70AF42EB96FB00012135D /* Functions in Frameworks */,
+				E1CBDF632EDEDD94005AB9B0 /* ResearchKit in Frameworks */,
 				E1D70AFC2EB96FB00012135D /* Supabase in Frameworks */,
 				E1D70AF22EB96FB00012135D /* Auth in Frameworks */,
 				E1D70AFA2EB96FB00012135D /* Storage in Frameworks */,
@@ -86,6 +94,10 @@
 				E1D70AF72EB96FB00012135D /* Realtime */,
 				E1D70AF92EB96FB00012135D /* Storage */,
 				E1D70AFB2EB96FB00012135D /* Supabase */,
+				E1CBDF622EDEDD94005AB9B0 /* ResearchKit */,
+				E1CBDF642EDEDD94005AB9B0 /* ResearchKitActiveTask */,
+				E1CBDF662EDEDD94005AB9B0 /* ResearchKitSwiftUI */,
+				E1CBDF682EDEDD94005AB9B0 /* ResearchKitUI */,
 			);
 			productName = "Tinnitus Capstone";
 			productReference = E16CCBAB2E921BA10075B590 /* Tinnitus Capstone.app */;
@@ -117,6 +129,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E16CCBAC2E921BA10075B590 /* Products */;
@@ -354,6 +367,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/StanfordBDHG/ResearchKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.2;
+			};
+		};
 		E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
@@ -365,6 +386,26 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		E1CBDF622EDEDD94005AB9B0 /* ResearchKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */;
+			productName = ResearchKit;
+		};
+		E1CBDF642EDEDD94005AB9B0 /* ResearchKitActiveTask */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */;
+			productName = ResearchKitActiveTask;
+		};
+		E1CBDF662EDEDD94005AB9B0 /* ResearchKitSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */;
+			productName = ResearchKitSwiftUI;
+		};
+		E1CBDF682EDEDD94005AB9B0 /* ResearchKitUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */;
+			productName = ResearchKitUI;
+		};
 		E1D70AF12EB96FB00012135D /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */;
