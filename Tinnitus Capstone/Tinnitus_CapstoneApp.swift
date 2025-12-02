@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import Spezi
 
 @main
 struct Tinnitus_CapstoneApp: App {
+    @ApplicationDelegateAdaptor(TinnitusCapstoneDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .spezi(appDelegate)
         }
     }
 }
