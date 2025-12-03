@@ -1,9 +1,9 @@
 import Spezi
 import SwiftUI
 
-class TinnitusCapstoneDelegate: SpeziAppDelegate {
+class TinnitusAppDelegate: SpeziAppDelegate {
     override var configuration: Configuration {
-        Configuration(standard: TinnitusCapstoneStandard()) {
+        Configuration(standard: TinnitusAppStandard()) {
             // Add your Spezi modules here
             // e.g.:
             // account
