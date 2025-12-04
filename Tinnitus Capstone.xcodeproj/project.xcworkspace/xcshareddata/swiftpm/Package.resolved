@@ -1,6 +1,24 @@
 {
-  "originHash" : "693a5e8a51ac28c7e16b7f4177fdea5a74df7022a482ea4a176d97db68d604bb",
+  "originHash" : "115197935f1161c5a191ea20860ac44b3ec14b00da137d3f31b681495b65c642",
   "pins" : [
+    {
+      "identity" : "networkimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/NetworkImage",
+      "state" : {
+        "revision" : "2849f5323265386e200484b0d0f896e73c3411b9",
+        "version" : "6.0.1"
+      }
+    },
+    {
+      "identity" : "phonenumberkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/marmelroy/PhoneNumberKit",
+      "state" : {
+        "revision" : "3946d6d533392755623f255a58211146cfc69817",
+        "version" : "4.2.0"
+      }
+    },
     {
       "identity" : "researchkit",
       "kind" : "remoteSourceControl",
@@ -20,12 +38,39 @@
       }
     },
     {
+      "identity" : "speziaccount",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/StanfordSpezi/SpeziAccount.git",
+      "state" : {
+        "revision" : "c3a1febf5efca80c2900e8d7feff707a6019ea21",
+        "version" : "2.3.5"
+      }
+    },
+    {
       "identity" : "spezifoundation",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/StanfordSpezi/SpeziFoundation.git",
       "state" : {
         "revision" : "0a44bfca9bce92dc9ff30994f658086b86fed631",
         "version" : "2.5.2"
+      }
+    },
+    {
+      "identity" : "spezistorage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/StanfordSpezi/SpeziStorage.git",
+      "state" : {
+        "revision" : "dfba9f0690a1ddfadd761f4f634254bf4406bd12",
+        "version" : "2.1.2"
+      }
+    },
+    {
+      "identity" : "speziviews",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/StanfordSpezi/SpeziViews.git",
+      "state" : {
+        "revision" : "91be5dfe4dbedbe2b10bee491c98cbefc5ac95fd",
+        "version" : "1.12.8"
       }
     },
     {
@@ -74,6 +119,15 @@
       }
     },
     {
+      "identity" : "swift-cmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-cmark",
+      "state" : {
+        "revision" : "5d9bdaa4228b381639fff09403e39a04926e2dbe",
+        "version" : "0.7.1"
+      }
+    },
+    {
       "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
@@ -119,6 +173,15 @@
       }
     },
     {
+      "identity" : "swift-markdown-ui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/swift-markdown-ui.git",
+      "state" : {
+        "revision" : "5f613358148239d0292c0cef674a3c2314737f9e",
+        "version" : "2.4.1"
+      }
+    },
+    {
       "identity" : "swift-numerics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-numerics.git",
@@ -128,12 +191,30 @@
       }
     },
     {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax.git",
+      "state" : {
+        "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
+        "version" : "602.0.0"
+      }
+    },
+    {
       "identity" : "xctest-dynamic-overlay",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
         "revision" : "4c27acf5394b645b70d8ba19dc249c0472d5f618",
         "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "xctestextensions",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/StanfordBDHG/XCTestExtensions.git",
+      "state" : {
+        "revision" : "5f4b9670acfac68ed55a2d6462d716a2bcdc2261",
+        "version" : "1.2.2"
       }
     },
     {
