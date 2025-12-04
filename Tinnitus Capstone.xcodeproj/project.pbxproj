@@ -11,6 +11,12 @@
 		E1CBDF652EDEDD94005AB9B0 /* ResearchKitActiveTask in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF642EDEDD94005AB9B0 /* ResearchKitActiveTask */; };
 		E1CBDF672EDEDD94005AB9B0 /* ResearchKitSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF662EDEDD94005AB9B0 /* ResearchKitSwiftUI */; };
 		E1CBDF692EDEDD94005AB9B0 /* ResearchKitUI in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDF682EDEDD94005AB9B0 /* ResearchKitUI */; };
+		E1CBDFA72EDEFF0D005AB9B0 /* Spezi in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDFA62EDEFF0D005AB9B0 /* Spezi */; };
+		E1CBDFA92EDEFF0D005AB9B0 /* SpeziTesting in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDFA82EDEFF0D005AB9B0 /* SpeziTesting */; };
+		E1CBDFAB2EDEFF0D005AB9B0 /* XCTSpezi in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBDFAA2EDEFF0D005AB9B0 /* XCTSpezi */; };
+		E1CBE1852EE113F3005AB9B0 /* SpeziAccount in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBE1842EE113F3005AB9B0 /* SpeziAccount */; };
+		E1CBE1872EE113F3005AB9B0 /* SpeziAccountPhoneNumbers in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBE1862EE113F3005AB9B0 /* SpeziAccountPhoneNumbers */; };
+		E1CBE1892EE113F3005AB9B0 /* XCTSpeziAccount in Frameworks */ = {isa = PBXBuildFile; productRef = E1CBE1882EE113F3005AB9B0 /* XCTSpeziAccount */; };
 		E1D70AF22EB96FB00012135D /* Auth in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF12EB96FB00012135D /* Auth */; };
 		E1D70AF42EB96FB00012135D /* Functions in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF32EB96FB00012135D /* Functions */; };
 		E1D70AF62EB96FB00012135D /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = E1D70AF52EB96FB00012135D /* PostgREST */; };
@@ -36,13 +42,19 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1CBDFA72EDEFF0D005AB9B0 /* Spezi in Frameworks */,
 				E1CBDF692EDEDD94005AB9B0 /* ResearchKitUI in Frameworks */,
 				E1CBDF672EDEDD94005AB9B0 /* ResearchKitSwiftUI in Frameworks */,
 				E1D70AF62EB96FB00012135D /* PostgREST in Frameworks */,
 				E1CBDF652EDEDD94005AB9B0 /* ResearchKitActiveTask in Frameworks */,
+				E1CBDFA92EDEFF0D005AB9B0 /* SpeziTesting in Frameworks */,
+				E1CBE1892EE113F3005AB9B0 /* XCTSpeziAccount in Frameworks */,
+				E1CBE1852EE113F3005AB9B0 /* SpeziAccount in Frameworks */,
 				E1D70AF42EB96FB00012135D /* Functions in Frameworks */,
+				E1CBE1872EE113F3005AB9B0 /* SpeziAccountPhoneNumbers in Frameworks */,
 				E1CBDF632EDEDD94005AB9B0 /* ResearchKit in Frameworks */,
 				E1D70AFC2EB96FB00012135D /* Supabase in Frameworks */,
+				E1CBDFAB2EDEFF0D005AB9B0 /* XCTSpezi in Frameworks */,
 				E1D70AF22EB96FB00012135D /* Auth in Frameworks */,
 				E1D70AFA2EB96FB00012135D /* Storage in Frameworks */,
 				E1D70AF82EB96FB00012135D /* Realtime in Frameworks */,
@@ -98,6 +110,12 @@
 				E1CBDF642EDEDD94005AB9B0 /* ResearchKitActiveTask */,
 				E1CBDF662EDEDD94005AB9B0 /* ResearchKitSwiftUI */,
 				E1CBDF682EDEDD94005AB9B0 /* ResearchKitUI */,
+				E1CBDFA62EDEFF0D005AB9B0 /* Spezi */,
+				E1CBDFA82EDEFF0D005AB9B0 /* SpeziTesting */,
+				E1CBDFAA2EDEFF0D005AB9B0 /* XCTSpezi */,
+				E1CBE1842EE113F3005AB9B0 /* SpeziAccount */,
+				E1CBE1862EE113F3005AB9B0 /* SpeziAccountPhoneNumbers */,
+				E1CBE1882EE113F3005AB9B0 /* XCTSpeziAccount */,
 			);
 			productName = "Tinnitus Capstone";
 			productReference = E16CCBAB2E921BA10075B590 /* Tinnitus Capstone.app */;
@@ -130,6 +148,8 @@
 			packageReferences = (
 				E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */,
+				E1CBDFA52EDEFF0D005AB9B0 /* XCRemoteSwiftPackageReference "Spezi" */,
+				E1CBE1832EE113F3005AB9B0 /* XCRemoteSwiftPackageReference "SpeziAccount" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E16CCBAC2E921BA10075B590 /* Products */;
@@ -375,6 +395,22 @@
 				minimumVersion = 3.1.2;
 			};
 		};
+		E1CBDFA52EDEFF0D005AB9B0 /* XCRemoteSwiftPackageReference "Spezi" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/StanfordSpezi/Spezi";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.9.3;
+			};
+		};
+		E1CBE1832EE113F3005AB9B0 /* XCRemoteSwiftPackageReference "SpeziAccount" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/StanfordSpezi/SpeziAccount.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.5;
+			};
+		};
 		E1D70AF02EB96FB00012135D /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase-community/supabase-swift.git";
@@ -405,6 +441,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E1CBDF612EDEDD94005AB9B0 /* XCRemoteSwiftPackageReference "ResearchKit" */;
 			productName = ResearchKitUI;
+		};
+		E1CBDFA62EDEFF0D005AB9B0 /* Spezi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDFA52EDEFF0D005AB9B0 /* XCRemoteSwiftPackageReference "Spezi" */;
+			productName = Spezi;
+		};
+		E1CBDFA82EDEFF0D005AB9B0 /* SpeziTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDFA52EDEFF0D005AB9B0 /* XCRemoteSwiftPackageReference "Spezi" */;
+			productName = SpeziTesting;
+		};
+		E1CBDFAA2EDEFF0D005AB9B0 /* XCTSpezi */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBDFA52EDEFF0D005AB9B0 /* XCRemoteSwiftPackageReference "Spezi" */;
+			productName = XCTSpezi;
+		};
+		E1CBE1842EE113F3005AB9B0 /* SpeziAccount */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBE1832EE113F3005AB9B0 /* XCRemoteSwiftPackageReference "SpeziAccount" */;
+			productName = SpeziAccount;
+		};
+		E1CBE1862EE113F3005AB9B0 /* SpeziAccountPhoneNumbers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBE1832EE113F3005AB9B0 /* XCRemoteSwiftPackageReference "SpeziAccount" */;
+			productName = SpeziAccountPhoneNumbers;
+		};
+		E1CBE1882EE113F3005AB9B0 /* XCTSpeziAccount */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E1CBE1832EE113F3005AB9B0 /* XCRemoteSwiftPackageReference "SpeziAccount" */;
+			productName = XCTSpeziAccount;
 		};
 		E1D70AF12EB96FB00012135D /* Auth */ = {
 			isa = XCSwiftPackageProductDependency;
