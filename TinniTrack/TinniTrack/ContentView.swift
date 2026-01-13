@@ -16,6 +16,7 @@ struct ContentView: View {
                 HomeView()
             } else {
                 //SignUpOrLoginView()
+                //HomeView()
                 LoginView()
                 //LoudnessMatchView()
                 //SignUpOrLoginView(isLoggedIn: $isLoggedIn)

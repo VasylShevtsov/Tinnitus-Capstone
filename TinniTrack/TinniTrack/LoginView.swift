@@ -34,10 +34,7 @@ struct LoginView: View {
             .padding(.bottom, 16)
             
             // Login button - you can add navigation later
-            Button(action: {
-                // Handle login action
-                print("Login tapped")
-            }) {
+            NavigationLink(destination: HomeView()) {
                 Text("Login")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white)
