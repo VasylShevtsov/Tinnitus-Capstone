@@ -6,34 +6,59 @@ We are building an iOS research app that measures tinnitus loudness using calibr
 **Data collection:**
 *   Baseline hearing thresholds (via HealthKit Audiograms).
 *   Longitudinal Tinnitus Loudness-Match (LM) and Pitch-Match (PM) measurements.
-*   Device, volume, and environmental noise metrics.
 
 ## 2. Why we’re building it
 *   **Objectivity:** Tinnitus is subjective; standardized calibration (dB SL/HL) allows for inter-subject and longitudinal comparison.
 *   **Hardware Consistency:** Apple devices (specifically AirPods Pro) provide known acoustic profiles, enabling clinical-grade accuracy outside a sound booth.
-*   **Temporal Resolution:** Daily measurements capture the volatile nature of tinnitus, revealing patterns missed in infrequent clinical visits.
+*   **Temporal Resolution:** Daily measurements could capture the volatile nature of tinnitus, revealing patterns missed in infrequent clinical visits.
 
 ## 3. V1 User Journey
 
-### A. Onboarding & Permissions
-*   **eConsent:** Displays IRB-approved consent forms. Upon agreement, generates a signed consent PDF and logs a ConsentEvent (Participant ID, Version, Timestamp) to the backend.
-*   **HealthKit Integration:** Allows importing the user’s Apple-calibrated audiogram to compute baseline thresholds and derive dB SL.
-*   **Notification permission:** Requests permission for local push notifications to trigger adherence reminders.
+### A. Authentication (Login / Sign Up)
+Upon downloading the app, the user is prompted to either **Log In** or **Sign Up**.
 
-### B. Baseline Hearing Test
+*   **Log In:** If the user already has an account, they authenticate and proceed into the app.
+*   **Sign Up:** If the user does not have an account, they complete account creation. During signup we collect:
+    *   Name
+    *   Date of birth (DOB)
+    *   Sex
+
+Once the account is created (or the user logs in), the user is taken to the **Home Dashboard**.
+
+### B. Home Dashboard (Studies List)
+The Home Dashboard shows a list of **open studies currently recruiting**.
+
+*   If the user is **not enrolled** in a study, selecting a study displays:
+    *   Study description
+    *   Inclusion criteria
+    *   Exclusion criteria
+*   The user can then choose to:
+    *   **Enroll** in the study, or
+    *   **Exit** (return to the studies list)
+
+### C. Enrollment & eConsent
+If the user chooses to enroll, they are prompted with an **eConsent** flow.
+
+*   Upon agreement/submission, the app generates a signed consent PDF and logs a ConsentEvent (Participant ID, Version, Timestamp) to the backend.
+*   After eConsent is completed, the user is taken to the **Study Home Page**.
+
+### D. Study No. 1: Audiogram Import (HealthKit) Prerequisite
+For Study No. 1, the first requirement is importing an **audiogram from HealthKit**.
+
 *   **Audiogram Check:** The app queries HealthKit for an existing valid audiogram.
-*   **The "Apple Hearing Test" Flow:** If no audiogram is present, the app instructs the user to complete the native Apple Hearing Test (accessible via iOS Settings with compatible AirPods).
-*   **Import:** Upon completion, the app imports the audiogram data to calculate Sensation Level (dB SL) offsets.
+*   **If no audiogram is available:** the app prompts the user to complete a hearing test from the native Apple flow (via **Apple Settings** or the **Health app**, depending on iOS version/device).
+*   **Import:** Once available, the app imports the audiogram data and proceeds to enable the study tasks.
 
-### C. The Loudness-Match (LM) Task
-*   **Trigger:** Push notification sent during a time window (20-minute expiry).
-*   **Device Validation:** Verifies output route is set to supported hardware (e.g., AirPods Pro 2/3).
-*   **Environmental Noise Check:** Uses the microphone to ensure ambient noise is below a specific threshold (e.g., < 40 dBA).
-*   **Task Execution:** User adjusts a 1,000 Hz pure tone to equal their tinnitus loudness. This is repeated 3 times to derive a Mean Loudness Value.
+### E. Study No. 1: Loudness-Match (LM) Tasks
+Users complete loudness-matching tasks at specific times of day.
 
-### D. Study Protocol (Adherence)
-*   **Frequency:** 4 measurements per day for 14 days.
-*   **Dropout Logic:** Participants missing >X% of checkpoints (configurable parameter) are flagged as "Non-Compliant" in the researcher dashboard.
+*   The Study Home Page shows:
+    *   A list of **future tasks**, sorted **soonest → latest**
+    *   A list of **completed tasks**
+*   A task is only available to start if the user is currently within the **active time window** for that task.
+*   **Schedule:** 4 tasks per day for 7 consecutive days.
+*   **Task execution:** Each task involves the user adjusting the volume of a **1,000 Hz pure tone** until it matches their tinnitus loudness.
+*   The user submits the match and receives a confirmation that the task has been completed.
 
 ## 4. Scientific & Engineering Core
 *   **Calibration:** Implements RETSPL tables to convert generic dB SPL to clinical dB HL (Hearing Level) and dB SL (Sensation Level).
@@ -46,33 +71,40 @@ We are building an iOS research app that measures tinnitus loudness using calibr
 *   **Frameworks:**
     *   **HealthKit:** For audiogram retrieval.
     *   **ResearchKit (StanfordBDHG Fork):** We use [StanfordBDHG’s SPM fork of Apple ResearchKit](https://github.com/StanfordBDHG/ResearchKit).
-    *   **Stanford Spezi:** A free and open-source framework for rapid development of modern, interoperable digital health applications. [Website](https://spezi.stanford.edu) | [GitHub](https://github.com/StanfordSpezi).
 
 ### Backend
 *   **Supabase:** PostgreSQL + Auth.
 
 ## 6. Backend Responsibilities
-*   **Authentication:** Anonymous login or email/password via Supabase Auth to secure participant data.
+*   **Authentication:** Email/password login and account signup via Supabase Auth. Users authenticate by logging in to an existing account or signing up for a new account (collecting name, DOB, and sex during signup).
 *   **Row Level Security (RLS):** Policies ensuring users can only insert/read their own data, while researchers can read all anonymized data.
-*   **Data Ingestion:** API endpoints to receive JSON payloads from the Stanford Spezi module.
-*   **Compliance:** Storing consent timestamps separately from medical data (if required by IRB).
 
 ## 7. Version Plan
 
 ### Version 1 (MVP)
-*   Consent + permissions
-*   Headphone gating
-*   Quiet-room gating
-*   Prompt Apple hearing test and import audiogram
-*   Single-frequency (1kHz) LM
-*   Daily local push notifications
+*   User account creation and login (signup collects name, DOB, sex)
+*   Home dashboard that lists available recruiting studies
+*   Users can view study description + inclusion/exclusion criteria
+*   Users can enroll in a study via eConsent
+*   Study No. 1 built and available for loudness matching
+*   For study No. 1:
+    *   Consent + permissions
+    *   Prompt Apple hearing test (if needed) and import audiogram via HealthKit
+    *   Headphone gating for Apple Airpods Pro 2
+    *   Quiet-room gating
+    *   Single-frequency (1kHz) LM
+    *   4 tasks per day for 7 days
+    *   Daily local push notifications
 
 ### V2 (Future Work)
-*   In-app hearing test (bypassing Apple native test)
-*   Multi-frequency PM (Pitch Match) testing. Have the user both frequency match and loudness math their tinnitus.
-*   Add a wider range of allowed earphone models.
+*   Home screen lists all available studies
+*   Users can enroll in multiple studies
+*   Study No. 2 built and available for LM and multi-frequency PM (Pitch Match) testing. Have the user both frequency match and loudness match their tinnitus.
+*   Add compatibility for AirPods Pro 3
+*   Login with biometric auth (faceid or fingerprint)
 *   EMA Questionnaires.
-*   Researcher dashboard.
+*   Researcher dashboard to access participant data.
+*   In-app hearing test (bypassing Apple native test).
 
 ---
 
