@@ -52,13 +52,40 @@ For Study No. 1, the first requirement is importing an **audiogram from HealthKi
 ### E. Study No. 1: Loudness-Match (LM) Tasks
 Users complete loudness-matching tasks at specific times of day.
 
-*   The Study Home Page shows:
-    *   A list of **future tasks**, sorted **soonest → latest**
-    *   A list of **completed tasks**
-*   A task is only available to start if the user is currently within the **active time window** for that task.
-*   **Schedule:** 4 tasks per day for 7 consecutive days.
-*   **Task execution:** Each task involves the user adjusting the volume of a **1,000 Hz pure tone** until it matches their tinnitus loudness.
-*   The user submits the match and receives a confirmation that the task has been completed.
+*   **Task execution:** Each task follows a structured validation and measurement flow:
+
+    1.  **Headphone gating (AirPods Pro 2 required):**
+        *   When the user taps **Start Task**, the app verifies the connected audio output device.
+        *   Only **AirPods Pro (2nd generation)** are permitted for Study No. 1.
+        *   If the correct headphones are **not connected**, the task cannot proceed.
+            *   The user is shown a blocking message instructing them to connect AirPods Pro (2nd generation).
+            *   The task remains locked until the correct headphones are detected.
+        *   If the correct headphones are connected, the app proceeds to environmental validation.
+
+    2.  **Quiet-room gating (environmental noise check):**
+        *   The user is prompted to confirm they are in a quiet environment.
+        *   The app measures ambient environmental noise using the device microphone.
+        *   A predefined environmental threshold (X dB SPL, to be finalized during validation testing) determines acceptability.
+        *   If environmental noise exceeds the threshold:
+            *   The task cannot begin.
+            *   The user is instructed to move to a quieter location.
+            *   Ambient noise is continuously monitored.
+        *   Once environmental noise falls below the threshold:
+            *   The task becomes available to start.
+
+    3.  **Continuous monitoring during task:**
+        *   Environmental noise continues to be monitored throughout the Loudness-Match task.
+        *   If ambient noise rises above the allowed threshold at any point:
+            *   A visible on-screen alert indicates that the environment is too loud.
+            *   Tone adjustment is temporarily paused or disabled.
+        *   When environmental noise returns below the threshold:
+            *   The alert automatically disappears.
+            *   The user may resume the task.
+
+    4.  **Loudness-matching procedure:**
+        *   The user adjusts the volume of a **1,000 Hz pure tone** until it matches their tinnitus loudness.
+        *   The match is recorded in calibrated units (dB HL and/or dB SL).
+        *   The user submits the match and receives a confirmation that the task has been completed.
 
 ## 4. Scientific & Engineering Core
 *   **Calibration:** Implements RETSPL tables to convert generic dB SPL to clinical dB HL (Hearing Level) and dB SL (Sensation Level).
