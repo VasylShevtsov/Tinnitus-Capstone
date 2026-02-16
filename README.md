@@ -118,6 +118,31 @@ Users complete loudness-matching tasks at specific times of day.
 ### Backend
 *   **Supabase:** PostgreSQL + Auth.
 
+### Source Layout (iOS)
+
+We use a **feature-first** structure in a single app target for V1, with clear seams for future module extraction:
+
+*   `TinniTrack/Features/`
+    *   UI screens and flow state organized by product area.
+    *   Current areas: `Onboarding`, `Dashboard`, `HearingTest`, `LoudnessMatch`.
+*   `TinniTrack/Domain/`
+    *   Pure domain logic and models (no direct UI dependencies).
+    *   Includes audio engine, calibration logic, and study/task data models.
+*   `TinniTrack/Services/`
+    *   Integration boundaries for external systems (`Supabase`, `HealthKit`).
+    *   Prefer protocol-based interfaces so features depend on abstractions.
+*   `TinniTrack/Modules/`
+    *   Reusable protocol engines intended to support future studies (e.g., Study No. 2).
+    *   Keep in-app for now; extract to SPM modules when workflows stabilize.
+*   `TinniTrack/Shared/`
+    *   Cross-feature app infrastructure (app root, navigation shell, shared UI primitives).
+
+Dependency direction for maintainability:
+
+*   `Features` → depends on `Domain` and service protocols.
+*   `Services` implements protocol contracts used by `Features`.
+*   `Domain` should not depend on `Features`.
+
 ## 6. Backend Responsibilities
 *   **Authentication:** Email/password login and account signup via Supabase Auth. Users authenticate by logging in to an existing account or signing up for a new account (collecting name, DOB, and sex during signup).
 *   **Row Level Security (RLS):** Policies ensuring users can only insert/read their own data, while researchers can read all anonymized data.
