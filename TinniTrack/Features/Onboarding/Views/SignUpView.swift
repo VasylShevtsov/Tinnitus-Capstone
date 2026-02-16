@@ -29,6 +29,7 @@ struct SignUpView: View {
     private let focusColor = Color(red: 0.0, green: 0.48, blue: 1.0)
     private let fieldBorderColor = Color(red: 0.82, green: 0.82, blue: 0.84)
     private let actionColor = Color(red: 0.06, green: 0.24, blue: 0.44)
+    private let secondaryTextColor = Color(red: 0.24, green: 0.24, blue: 0.28)
 
     init(draftStore: SignupDraftStoring = SignupDraftStore()) {
         self.draftStore = draftStore
@@ -63,7 +64,7 @@ struct SignUpView: View {
 
                         Text(currentStep == 1 ? "Step 1 of 2: account credentials." : "Step 2 of 2: complete your profile.")
                             .font(.system(size: 15, weight: .regular))
-                            .foregroundStyle(Color.secondary)
+                            .foregroundStyle(secondaryTextColor)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 12)
@@ -135,7 +136,7 @@ struct SignUpView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Date of Birth")
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(Color.secondary)
+                                    .foregroundStyle(secondaryTextColor)
                                 DatePicker(
                                     "",
                                     selection: $dateOfBirth,
@@ -258,6 +259,7 @@ private struct FloatingInputField: View {
     var keyboardType: UIKeyboardType = .default
     var accessibilityIdentifier: String? = nil
     var clearAction: (() -> Void)? = nil
+    private let floatingLabelColor = Color(red: 0.24, green: 0.24, blue: 0.28)
 
     private var shouldFloat: Bool {
         isFocused || !text.isEmpty
@@ -275,7 +277,7 @@ private struct FloatingInputField: View {
 
             Text(label)
                 .font(.system(size: shouldFloat ? 12 : 17, weight: shouldFloat ? .semibold : .regular))
-                .foregroundStyle(shouldFloat ? Color.secondary : Color.gray)
+                .foregroundStyle(shouldFloat ? floatingLabelColor : Color.gray)
                 .padding(.horizontal, 14)
                 .offset(y: shouldFloat ? -18 : 0)
                 .animation(.easeInOut(duration: 0.16), value: shouldFloat)

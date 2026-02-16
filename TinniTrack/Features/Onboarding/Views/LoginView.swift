@@ -151,6 +151,7 @@ private struct FloatingInputField: View {
     let focusedBorderColor: Color
     var accessibilityIdentifier: String? = nil
     var clearAction: (() -> Void)? = nil
+    private let floatingLabelColor = Color(red: 0.24, green: 0.24, blue: 0.28)
 
     private var shouldFloat: Bool {
         isFocused || !text.isEmpty
@@ -168,7 +169,7 @@ private struct FloatingInputField: View {
 
             Text(label)
                 .font(.system(size: shouldFloat ? 12 : 17, weight: shouldFloat ? .semibold : .regular))
-                .foregroundStyle(shouldFloat ? Color.secondary : Color.gray)
+                .foregroundStyle(shouldFloat ? floatingLabelColor : Color.gray)
                 .padding(.horizontal, 14)
                 .offset(y: shouldFloat ? -18 : 0)
                 .animation(.easeInOut(duration: 0.16), value: shouldFloat)
@@ -176,12 +177,14 @@ private struct FloatingInputField: View {
             Group {
                 if isSecure {
                     SecureField("", text: $text)
+                        .textContentType(.password)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier(accessibilityIdentifier ?? "")
                 } else {
                     TextField("", text: $text)
                         .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier(accessibilityIdentifier ?? "")
