@@ -32,113 +32,140 @@ struct LoginView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Spacer(minLength: 16)
+            GeometryReader { geometry in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 16)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .onTapGesture(perform: dismissKeyboard)
 
-                VStack(spacing: 14) {
-                    LogoView()
+                        VStack(spacing: 14) {
+                            LogoView()
 
-                    Text("Welcome to TinniTrack.")
-                        .font(.system(size: 31, weight: .bold))
-                        .foregroundStyle(.black)
-                        .multilineTextAlignment(.center)
+                            Text("Welcome to TinniTrack")
+                                .font(.system(size: 31, weight: .bold))
+                                .foregroundStyle(.black)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+                                .allowsTightening(true)
 
-                    Text("Sign in to begin your tinnitus tracking.")
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(secondaryTextColor)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 28)
-                .padding(.bottom, 28)
+                            Text("Sign in to begin your tinnitus tracking.")
+                                .font(.system(size: 15, weight: .regular))
+                                .foregroundStyle(secondaryTextColor)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.horizontal, 28)
+                        .padding(.bottom, 28)
+                        .contentShape(Rectangle())
+                        .onTapGesture(perform: dismissKeyboard)
 
-                VStack(spacing: 26) {
-                    VStack(spacing: 14) {
-                        FloatingInputField(
-                            label: "Email",
-                            text: $email,
-                            isSecure: false,
-                            isFocused: focusedField == .email,
-                            borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor,
-                            accessibilityIdentifier: "login_email_field",
-                            clearAction: { email = "" }
-                        )
-                        .focused($focusedField, equals: .email)
+                        VStack(spacing: 26) {
+                            VStack(spacing: 14) {
+                                FloatingInputField(
+                                    label: "Email",
+                                    text: $email,
+                                    isSecure: false,
+                                    isFocused: focusedField == .email,
+                                    borderColor: fieldBorderColor,
+                                    focusedBorderColor: focusColor,
+                                    accessibilityIdentifier: "login_email_field",
+                                    clearAction: { email = "" }
+                                )
+                                .focused($focusedField, equals: .email)
 
-                        FloatingInputField(
-                            label: "Password",
-                            text: $password,
-                            isSecure: true,
-                            isFocused: focusedField == .password,
-                            borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor,
-                            accessibilityIdentifier: "login_password_field"
-                        )
-                        .focused($focusedField, equals: .password)
+                                FloatingInputField(
+                                    label: "Password",
+                                    text: $password,
+                                    isSecure: true,
+                                    isFocused: focusedField == .password,
+                                    borderColor: fieldBorderColor,
+                                    focusedBorderColor: focusColor,
+                                    accessibilityIdentifier: "login_password_field"
+                                )
+                                .focused($focusedField, equals: .password)
 
-                        HStack {
-                            Spacer()
-                            Button("Forgot Password?") {
+                                HStack {
+                                    Spacer()
+                                    Button("Forgot Password?") {
+                                        Task {
+                                            await sessionStore.requestPasswordReset(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
+                                        }
+                                    }
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(focusColor)
+                                    .disabled(sessionStore.isLoading || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                    .accessibilityIdentifier("forgot_password_button")
+                                }
+                                .padding(.top, 2)
+                            }
+
+                            Button("Log In") {
                                 Task {
-                                    await sessionStore.requestPasswordReset(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
+                                    await sessionStore.signIn(
+                                        email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        password: password
+                                    )
                                 }
                             }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(focusColor)
-                            .disabled(sessionStore.isLoading || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                            .accessibilityIdentifier("forgot_password_button")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 54)
+                            .background(actionColor)
+                            .clipShape(Capsule())
+                            .padding(.horizontal, 12)
+                            .disabled(sessionStore.isLoading)
+                            .accessibilityIdentifier("login_button")
                         }
-                        .padding(.top, 2)
-                    }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 26)
+                        .background(Color.white.opacity(0.96))
+                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                .stroke(Color.white.opacity(0.85), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.05), radius: 18, x: 0, y: 10)
+                        .padding(.horizontal, 20)
+                        .gesture(
+                            TapGesture().onEnded(dismissKeyboard),
+                            including: .gesture
+                        )
 
-                    Button("Log In") {
-                        Task {
-                            await sessionStore.signIn(
-                                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
-                                password: password
-                            )
+                        Spacer(minLength: 16)
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
+                            .onTapGesture(perform: dismissKeyboard)
+
+                        HStack(spacing: 5) {
+                            Text("Don’t have an account?")
+                                .foregroundStyle(secondaryTextColor)
+                            NavigationLink("Sign Up", destination: SignUpView())
+                                .foregroundStyle(focusColor)
+                                .fontWeight(.semibold)
                         }
+                        .font(.system(size: 15, weight: .regular))
+                        .padding(.bottom, 24)
+                        .contentShape(Rectangle())
+                        .onTapGesture(perform: dismissKeyboard)
                     }
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 54)
-                    .background(actionColor)
-                    .clipShape(Capsule())
-                    .padding(.horizontal, 12)
-                    .disabled(sessionStore.isLoading)
-                    .accessibilityIdentifier("login_button")
+                    .frame(width: max(geometry.size.width - 20, 0))
+                    .frame(minHeight: geometry.size.height, alignment: .top)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 26)
-                .background(Color.white.opacity(0.96))
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(Color.white.opacity(0.85), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.05), radius: 18, x: 0, y: 10)
-                .padding(.horizontal, 20)
-
-                Spacer()
-
-                HStack(spacing: 5) {
-                    Text("Don’t have an account?")
-                        .foregroundStyle(secondaryTextColor)
-                    NavigationLink("Sign Up", destination: SignUpView())
-                        .foregroundStyle(focusColor)
-                        .fontWeight(.semibold)
-                }
-                .font(.system(size: 15, weight: .regular))
-                .padding(.bottom, 24)
+                .scrollDismissesKeyboard(.interactively)
+                .scrollDisabled(focusedField == nil)
             }
-            .padding(.horizontal, 10)
 
             if sessionStore.isLoading {
                 ProgressView()
             }
         }
         .navigationBarBackButtonHidden(true)
+    }
+
+    private func dismissKeyboard() {
+        focusedField = nil
     }
 }
 
@@ -184,7 +211,7 @@ private struct FloatingInputField: View {
                 } else {
                     TextField("", text: $text)
                         .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress)
+                        .textContentType(.username)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier(accessibilityIdentifier ?? "")
