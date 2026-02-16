@@ -22,7 +22,6 @@ Upon downloading the app, the user is prompted to either **Log In** or **Sign Up
     *   First name
     *   Last name
     *   Date of birth
-    *   Biological sex
 
 After signup, the user proceeds to the home dashboard.
 
@@ -144,7 +143,7 @@ Dependency direction for maintainability:
 *   `Domain` should not depend on `Features`.
 
 ## 6. Backend Responsibilities
-*   **Authentication:** Email/password login and account signup via Supabase Auth. Users authenticate by logging in to an existing account or signing up for a new account (collecting name, DOB, and sex during signup).
+*   **Authentication:** Email/password login and account signup via Supabase Auth. Users authenticate by logging in to an existing account or signing up for a new account (collecting name and DOB during signup).
 *   **Row Level Security (RLS):** Policies ensuring users can only insert/read their own data, while researchers can read all anonymized data.
 
 ### Database (Supabase Postgres)
@@ -167,7 +166,8 @@ Below is the initial data model and how each table fits into the picture.
 
 *   `id` (`uuid`): Primary key. Defaults to `auth.uid()` and is a foreign key to `auth.users(id)`.
 *   `participant_id` (`integer`, identity, unique): A stable, sequential participant identifier for research-facing workflows/exports.
-*   `first_name`, `last_name`, `date_of_birth`, `biological_sex`: Required demographic fields captured at signup.
+*   `first_name`, `last_name`, `date_of_birth`: Required demographic fields captured at signup.
+*   `biological_sex`: Legacy profile field in the current schema (not required during signup).
 *   `timezone`: Optional (useful for scheduling task windows).
 *   `created_at`: Server timestamp.
 
@@ -271,7 +271,7 @@ RLS policies are required on all user-scoped tables (`profiles`, `consents`, `au
 ## 7. Version Plan
 
 ### Version 1 (MVP)
-*   User account creation and login (signup collects name, DOB, sex)
+*   User account creation and login (signup collects name and DOB)
 *   Home dashboard that lists available recruiting studies
 *   Users can view study description + inclusion/exclusion criteria
 *   Users can enroll in a study via eConsent
