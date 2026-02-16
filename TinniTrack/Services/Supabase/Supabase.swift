@@ -26,8 +26,14 @@ enum SupabaseConfigurationError: LocalizedError {
 enum SupabaseConfiguration {
     static func makeClient(bundle: Bundle = .main, processInfo: ProcessInfo = .processInfo) throws -> SupabaseClient {
         let env = processInfo.environment
-        let urlString = (env["SUPABASE_URL"] ?? bundle.object(forInfoDictionaryKey: "SUPABASE_URL") as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let anonKey = (env["SUPABASE_ANON_KEY"] ?? bundle.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let urlString = firstNonEmptyValue(
+            env["SUPABASE_URL"],
+            bundle.object(forInfoDictionaryKey: "SUPABASE_URL") as? String
+        )
+        let anonKey = firstNonEmptyValue(
+            env["SUPABASE_ANON_KEY"],
+            bundle.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String
+        )
 
         guard !urlString.isEmpty else { throw SupabaseConfigurationError.missingURL }
         guard let supabaseURL = URL(string: urlString) else { throw SupabaseConfigurationError.invalidURL }
@@ -37,6 +43,16 @@ enum SupabaseConfiguration {
             supabaseURL: supabaseURL,
             supabaseKey: anonKey
         )
+    }
+
+    private static func firstNonEmptyValue(_ candidates: String?...) -> String {
+        for candidate in candidates {
+            guard let trimmed = candidate?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else {
+                continue
+            }
+            return trimmed
+        }
+        return ""
     }
 }
 
