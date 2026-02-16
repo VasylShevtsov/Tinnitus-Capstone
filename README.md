@@ -122,6 +122,127 @@ Users complete loudness-matching tasks at specific times of day.
 *   **Authentication:** Email/password login and account signup via Supabase Auth. Users authenticate by logging in to an existing account or signing up for a new account (collecting name, DOB, and sex during signup).
 *   **Row Level Security (RLS):** Policies ensuring users can only insert/read their own data, while researchers can read all anonymized data.
 
+### Database (Supabase Postgres)
+
+The backend database lives in **Supabase (PostgreSQL)**. We treat the database schema as *version-controlled infrastructure*:
+
+*   **All schema changes must be made via SQL migration files** (no “click ops” in the Supabase UI for anything that affects tables/columns/constraints). This keeps the schema reproducible across environments and makes review/rollback possible.
+*   Migrations should be **additive and explicit** (create/alter/drop with clear intent) and committed to the repo alongside the code that depends on them.
+
+#### Current Schema:
+
+Below is the initial data model and how each table fits into the picture.
+
+##### 1) `auth.users` (Supabase Auth)
+*   Supabase manages credentials and the canonical user id (`uuid`).
+*   All app-owned tables that are user-scoped reference `auth.users.id`.
+
+##### 2) `public.profiles`
+**Purpose:** Store participant metadata collected during signup.
+
+*   `id` (`uuid`): Primary key. Defaults to `auth.uid()` and is a foreign key to `auth.users(id)`.
+*   `participant_id` (`integer`, identity, unique): A stable, sequential participant identifier for research-facing workflows/exports.
+*   `first_name`, `last_name`, `date_of_birth`, `biological_sex`: Required demographic fields captured at signup.
+*   `timezone`: Optional (useful for scheduling task windows).
+*   `created_at`: Server timestamp.
+
+Relationship notes:
+*   `profiles.id` → `auth.users.id` with **ON DELETE CASCADE** (deleting an auth user cleans up the profile).
+
+##### 3) `public.studies`
+**Purpose:** Define research studies that appear in the Home Dashboard.
+
+*   `id` (`uuid`): Primary key.
+*   `slug` (`text`, unique): Stable identifier used by the client (deep links, routing, etc.).
+*   `title`, `description`: User-facing study content.
+*   `status` (`text`): Constrained to `recruiting`, `recruiting paused`, or `closed`.
+*   `created_at`: Server timestamp.
+
+##### 4) `public.study_enrollments`
+**Purpose:** Link a user to a study and track enrollment state.
+
+*   `id` (`uuid`): Primary key.
+*   `user_id` (`uuid`): FK → `auth.users(id)`.
+*   `study_id` (`uuid`): FK → `public.studies(id)`.
+*   `status` (`text`): One of `enrolled`, `withdrawn`, `completed`, `screen_failed`.
+*   `enrolled_at`, `created_at`: Timestamps (note: `enrolled_at` is the domain timestamp; `created_at` is record creation).
+
+Constraints:
+*   Unique `(user_id, study_id)` so a user has at most one enrollment record per study.
+
+##### 5) `public.consents`
+**Purpose:** Store eConsent signatures per user per study per consent version.
+
+*   `id` (`uuid`): Primary key.
+*   `user_id` (`uuid`): FK → `auth.users(id)` (defaults to `auth.uid()`).
+*   `study_id` (`uuid`): FK → `public.studies(id)`.
+*   `consent_version` (`text`): Version string (e.g., `v1`, `2026-02-01`).
+*   `consent_pdf_path` (`text`): Storage path for the signed PDF (Supabase Storage).
+*   `signed_at`: Timestamp.
+
+Constraints:
+*   Unique `(user_id, study_id, consent_version)` so a user can’t sign the same version twice.
+
+##### 6) `public.audiograms`
+**Purpose:** Persist baseline hearing threshold data (from HealthKit audiograms) needed for calibration and analysis.
+
+*   `id` (`uuid`): Primary key.
+*   `user_id` (`uuid`): FK → `auth.users(id)` (defaults to `auth.uid()`).
+*   `created_at`: Timestamp (record creation).
+*   `measured_at` (`timestamptz`): When the audiogram was measured.
+*   `source` (`text`): Where the audiogram came from (e.g., HealthKit / manual import).
+*   `headphone_name` (`text`): The output route/headphone used when relevant.
+*   `frequency_data` (`jsonb`): Frequency→threshold payload. We store this as JSONB because HealthKit audiograms can be sparse and device-dependent.
+
+##### 7) `public.scheduled_tasks`
+**Purpose:** Generate the *planned* schedule of tasks for a user’s study enrollment (what should happen, when).
+
+This table is intentionally minimal about “what the task does” — the task algorithms live in the client code, while the DB stores scheduling + lifecycle.
+
+*   `id` (`uuid`): Primary key.
+*   `enrollment_id` (`uuid`): FK → `public.study_enrollments(id)`.
+*   `task_key` (`text`): Minimal task identifier (e.g., `lm_1khz_v1`).
+*   `task_version` (`int`): Schema-level versioning for task definition changes.
+*   `scheduled_for`, `window_start`, `window_end`: The intended time and gating window.
+*   `status` (`text`): One of `scheduled`, `completed`, `missed`, `skipped`, `cancelled`.
+*   `day_index` (`int`): Deterministic ordering (0..6).
+*   `slot_index` (`int`): Deterministic ordering (0..3).
+*   `created_at`, `completed_at`: Timestamps.
+
+Constraints:
+*   Unique `(enrollment_id, day_index, slot_index)` to prevent duplicate slots.
+
+##### 8) `public.task_runs`
+**Purpose:** Store the *actual* execution data for a task (what happened) — this is the core research dataset.
+
+*   `id` (`uuid`): Primary key.
+*   `scheduled_task_id` (`uuid`): FK → `public.scheduled_tasks(id)`.
+*   `enrollment_id` (`uuid`): FK → `public.study_enrollments(id)`.
+*   `user_id` (`uuid`): FK → `auth.users(id)` (defaults to `auth.uid()`).
+*   `run_status` (`text`): One of `completed`, `aborted`, `failed`.
+*   `started_at`, `completed_at`, `submitted_at`: Timing metadata.
+*   `app_version`, `protocol_version`, `calibration_version`: Reproducibility fields for analysis.
+*   `device_info` (`jsonb`): Model / iOS version / etc.
+*   `headphone_info` (`jsonb`): Route name, model id, firmware if available.
+*   `gating` (`jsonb`): Persist outputs of gating logic (computed in app code).
+*   `raw_payload` (`jsonb`): The full task payload (trials, slider moves, responses, etc.).
+*   `created_at`: Server timestamp.
+
+#### Data Flow Summary
+*   **Sign up / login:** `auth.users` is created by Supabase Auth → we insert a matching `public.profiles` row.
+*   **Study discovery:** Client reads from `public.studies` (filtered by status).
+*   **Enrollment:** Client creates `public.study_enrollments` and then generates `public.scheduled_tasks` for the protocol.
+*   **Consent:** Client writes `public.consents` + stores the PDF in Supabase Storage.
+*   **Measurements:** Audiograms → `public.audiograms`; task executions → `public.task_runs` (linked back to `scheduled_tasks` and `study_enrollments`).
+
+#### Access Control (RLS Plan)
+RLS policies are required on all user-scoped tables (`profiles`, `consents`, `audiograms`, `study_enrollments`, `scheduled_tasks`, `task_runs`) so:
+
+*   Participants can only read/insert/update rows that belong to their own `auth.uid()`.
+*   Research/admin access is granted via Supabase roles/claims (e.g., service role for ETL/exports, or a dedicated “researcher” role) and should never be shipped to the client.
+
+(Policies are not defined in the initial schema migration yet, but this is the intended enforcement model.)
+
 ## 7. Version Plan
 
 ### Version 1 (MVP)
