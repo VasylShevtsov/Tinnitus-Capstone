@@ -12,12 +12,14 @@ struct LoginView: View {
         case password
     }
 
+    @EnvironmentObject private var sessionStore: SessionStore
+
     @State private var email = ""
     @State private var password = ""
     @FocusState private var focusedField: Field?
 
-    private let focusColor = Color(red: 0.0, green: 0.48, blue: 1.0) // #007AFF
-    private let fieldBorderColor = Color(red: 0.82, green: 0.82, blue: 0.84) // #D1D1D6
+    private let focusColor = Color(red: 0.0, green: 0.48, blue: 1.0)
+    private let fieldBorderColor = Color(red: 0.82, green: 0.82, blue: 0.84)
     private let actionColor = Color(red: 0.06, green: 0.24, blue: 0.44)
 
     var body: some View {
@@ -57,6 +59,7 @@ struct LoginView: View {
                             isFocused: focusedField == .email,
                             borderColor: fieldBorderColor,
                             focusedBorderColor: focusColor,
+                            accessibilityIdentifier: "login_email_field",
                             clearAction: { email = "" }
                         )
                         .focused($focusedField, equals: .email)
@@ -67,27 +70,43 @@ struct LoginView: View {
                             isSecure: true,
                             isFocused: focusedField == .password,
                             borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor
+                            focusedBorderColor: focusColor,
+                            accessibilityIdentifier: "login_password_field"
                         )
                         .focused($focusedField, equals: .password)
 
                         HStack {
                             Spacer()
-                            Button("Forgot Password?") {}
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(focusColor)
+                            Button("Forgot Password?") {
+                                Task {
+                                    await sessionStore.requestPasswordReset(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
+                                }
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(focusColor)
+                            .disabled(sessionStore.isLoading || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .accessibilityIdentifier("forgot_password_button")
                         }
                         .padding(.top, 2)
                     }
 
-                    Button("Log In") {}
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 54)
-                        .background(actionColor)
-                        .clipShape(Capsule())
-                        .padding(.horizontal, 12)
+                    Button("Log In") {
+                        Task {
+                            await sessionStore.signIn(
+                                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                                password: password
+                            )
+                        }
+                    }
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(actionColor)
+                    .clipShape(Capsule())
+                    .padding(.horizontal, 12)
+                    .disabled(sessionStore.isLoading)
+                    .accessibilityIdentifier("login_button")
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 26)
@@ -113,6 +132,10 @@ struct LoginView: View {
                 .padding(.bottom, 24)
             }
             .padding(.horizontal, 10)
+
+            if sessionStore.isLoading {
+                ProgressView()
+            }
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -125,6 +148,7 @@ private struct FloatingInputField: View {
     let isFocused: Bool
     let borderColor: Color
     let focusedBorderColor: Color
+    var accessibilityIdentifier: String? = nil
     var clearAction: (() -> Void)? = nil
 
     private var shouldFloat: Bool {
@@ -153,11 +177,13 @@ private struct FloatingInputField: View {
                     SecureField("", text: $text)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .accessibilityIdentifier(accessibilityIdentifier ?? "")
                 } else {
                     TextField("", text: $text)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .accessibilityIdentifier(accessibilityIdentifier ?? "")
                 }
             }
             .font(.system(size: 17, weight: .regular))
