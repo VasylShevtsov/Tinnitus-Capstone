@@ -13,7 +13,7 @@ final class SupabaseAuthService: AuthServiceProtocol {
         self.client = client
     }
 
-    func signUp(email: String, password: String, metadata: SignUpMetadata) async throws {
+    func signUp(email: String, password: String, metadata: SignUpMetadata) async throws -> SignUpResult {
         var data: [String: AnyJSON] = [:]
         if let firstName = metadata.firstName?.trimmingCharacters(in: .whitespacesAndNewlines), !firstName.isEmpty {
             data["first_name"] = .string(firstName)
@@ -25,11 +25,14 @@ final class SupabaseAuthService: AuthServiceProtocol {
             data["date_of_birth"] = .string(Self.dateOnlyFormatter.string(from: dateOfBirth))
         }
 
-        try await client.auth.signUp(
+        let response = try await client.auth.signUp(
             email: email,
             password: password,
-            data: data
+            data: data,
+            redirectTo: Self.confirmEmailRedirectURL
         )
+
+        return response.session == nil ? .awaitingEmailVerification : .signedIn
     }
 
     func signIn(email: String, password: String) async throws {
@@ -72,6 +75,21 @@ final class SupabaseAuthService: AuthServiceProtocol {
         }
     }
 
+    func resendSignUpVerification(email: String, redirectURL: URL) async throws {
+        try await client.auth.resend(
+            email: email,
+            type: .signup,
+            emailRedirectTo: redirectURL
+        )
+    }
+
+    func isEmailNotConfirmedError(_ error: Error) -> Bool {
+        let message = error.localizedDescription.lowercased()
+        return message.contains("email not confirmed")
+            || message.contains("email_not_confirmed")
+            || message.contains("email not verified")
+    }
+
     func requestPasswordReset(email: String, redirectURL: URL) async throws {
         try await client.auth.resetPasswordForEmail(
             email,
@@ -80,7 +98,24 @@ final class SupabaseAuthService: AuthServiceProtocol {
     }
 
     func handleAuthCallback(url: URL) async throws -> AuthCallbackResult {
-        _ = try await client.auth.session(from: url)
+        let params = Self.authParams(from: url)
+
+        if let errorDescription = params["error_description"], !errorDescription.isEmpty {
+            throw NSError(
+                domain: "AuthCallback",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: errorDescription.replacingOccurrences(of: "+", with: " ")]
+            )
+        }
+
+        if let accessToken = params["access_token"],
+           let refreshToken = params["refresh_token"],
+           !accessToken.isEmpty,
+           !refreshToken.isEmpty {
+            _ = try await client.auth.setSession(accessToken: accessToken, refreshToken: refreshToken)
+        } else {
+            _ = try await client.auth.session(from: url)
+        }
 
         if Self.isRecoveryURL(url) {
             return .passwordRecovery
@@ -114,14 +149,24 @@ final class SupabaseAuthService: AuthServiceProtocol {
     }
 
     private static func isRecoveryURL(_ url: URL) -> Bool {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
-            return false
-        }
-
-        let queryItems = (components.queryItems ?? []) + Self.queryItems(fromFragment: components.fragment)
-        return queryItems.contains { item in
+        authItems(from: url).contains { item in
             item.name == "type" && item.value?.lowercased() == "recovery"
         }
+    }
+
+    private static func authParams(from url: URL) -> [String: String] {
+        var params: [String: String] = [:]
+        for item in authItems(from: url) {
+            params[item.name] = item.value
+        }
+        return params
+    }
+
+    private static func authItems(from url: URL) -> [URLQueryItem] {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return []
+        }
+        return (components.queryItems ?? []) + Self.queryItems(fromFragment: components.fragment)
     }
 
     private static func queryItems(fromFragment fragment: String?) -> [URLQueryItem] {
@@ -145,4 +190,6 @@ final class SupabaseAuthService: AuthServiceProtocol {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+
+    private static let confirmEmailRedirectURL = URL(string: "tinnitrack://auth/confirm")!
 }

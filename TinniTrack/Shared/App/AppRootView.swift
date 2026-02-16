@@ -15,6 +15,8 @@ struct AppRootView: View {
                 ProgressView("Loading…")
             case .unauthenticated:
                 LoginView()
+            case .awaitingEmailVerification:
+                EmailVerificationPendingView()
             case .authenticatedNeedsOnboarding:
                 CompleteOnboardingView()
             case .authenticatedReady:

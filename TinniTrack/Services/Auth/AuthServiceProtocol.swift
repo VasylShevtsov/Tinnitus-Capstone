@@ -9,6 +9,11 @@ struct AuthSession: Equatable {
     let userID: UUID
 }
 
+enum SignUpResult: Equatable {
+    case signedIn
+    case awaitingEmailVerification
+}
+
 enum AuthEvent: Equatable {
     case initialSession
     case signedIn
@@ -43,11 +48,13 @@ enum AuthCallbackResult: Equatable {
 }
 
 protocol AuthServiceProtocol {
-    func signUp(email: String, password: String, metadata: SignUpMetadata) async throws
+    func signUp(email: String, password: String, metadata: SignUpMetadata) async throws -> SignUpResult
     func signIn(email: String, password: String) async throws
     func signOut() async throws
     func currentSession() async throws -> AuthSession?
     func authStateStream() -> AsyncStream<AuthStateChange>
+    func resendSignUpVerification(email: String, redirectURL: URL) async throws
+    func isEmailNotConfirmedError(_ error: Error) -> Bool
     func requestPasswordReset(email: String, redirectURL: URL) async throws
     func handleAuthCallback(url: URL) async throws -> AuthCallbackResult
     func updatePassword(newPassword: String) async throws

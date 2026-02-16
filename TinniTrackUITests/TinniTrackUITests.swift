@@ -33,7 +33,7 @@ final class TinniTrackUITests: XCTestCase {
 
     @MainActor
     func testSignupDraftResumesOnStepTwoAfterRelaunch() throws {
-        let app = XCUIApplication()
+        let app = makeApp()
         app.launch()
 
         app.buttons["Sign Up"].tap()
@@ -62,10 +62,55 @@ final class TinniTrackUITests: XCTestCase {
     }
 
     @MainActor
+    func testEmailVerificationWaitingScreenBlocksDashboard() throws {
+        let app = makeApp()
+        app.launchEnvironment["UITEST_PENDING_VERIFICATION_EMAIL"] = "waiting@example.com"
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["email_verification_title"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.staticTexts["HOME"].exists)
+    }
+
+    @MainActor
+    func testEmailVerificationWaitingScreenResumesAfterRelaunch() throws {
+        let app = makeApp()
+        app.launchEnvironment["UITEST_PENDING_VERIFICATION_EMAIL"] = "resume@example.com"
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["email_verification_title"].waitForExistence(timeout: 2))
+
+        app.terminate()
+        app.launch()
+
+        XCTAssertTrue(app.staticTexts["email_verification_title"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testEmailVerificationCheckTransitionsWhenSessionBecomesAvailable() throws {
+        let app = makeApp()
+        app.launchEnvironment["UITEST_PENDING_VERIFICATION_EMAIL"] = "verify@example.com"
+        app.launchEnvironment["UITEST_NOOP_VERIFY_AFTER_SESSION_CHECKS"] = "2"
+        app.launch()
+
+        let verifyTitle = app.staticTexts["email_verification_title"]
+        XCTAssertTrue(verifyTitle.waitForExistence(timeout: 2))
+
+        app.buttons["email_verification_check_button"].tap()
+
+        XCTAssertTrue(app.navigationBars["Onboarding"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
             XCUIApplication().launch()
         }
+    }
+
+    private func makeApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["UITEST_CLEAR_PENDING_VERIFICATION"] = "1"
+        return app
     }
 }
