@@ -167,7 +167,6 @@ Below is the initial data model and how each table fits into the picture.
 *   `id` (`uuid`): Primary key. Defaults to `auth.uid()` and is a foreign key to `auth.users(id)`.
 *   `participant_id` (`integer`, identity, unique): A stable, sequential participant identifier for research-facing workflows/exports.
 *   `first_name`, `last_name`, `date_of_birth`: Required demographic fields captured at signup.
-*   `biological_sex`: Legacy profile field in the current schema (not required during signup).
 *   `timezone`: Optional (useful for scheduling task windows).
 *   `created_at`: Server timestamp.
 
