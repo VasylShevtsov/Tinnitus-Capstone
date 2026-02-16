@@ -21,6 +21,7 @@ struct LoginView: View {
     private let focusColor = Color(red: 0.0, green: 0.48, blue: 1.0)
     private let fieldBorderColor = Color(red: 0.82, green: 0.82, blue: 0.84)
     private let actionColor = Color(red: 0.06, green: 0.24, blue: 0.44)
+    private let secondaryTextColor = Color(red: 0.24, green: 0.24, blue: 0.28)
 
     var body: some View {
         ZStack {
@@ -44,7 +45,7 @@ struct LoginView: View {
 
                     Text("Sign in to begin your tinnitus tracking.")
                         .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(secondaryTextColor)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 28)
@@ -123,7 +124,7 @@ struct LoginView: View {
 
                 HStack(spacing: 5) {
                     Text("Don’t have an account?")
-                        .foregroundStyle(Color.secondary)
+                        .foregroundStyle(secondaryTextColor)
                     NavigationLink("Sign Up", destination: SignUpView())
                         .foregroundStyle(focusColor)
                         .fontWeight(.semibold)
