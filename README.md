@@ -1,7 +1,7 @@
 # Tinnitus Research and Tracking App
 
 ## 1. Project Overview
-We are building an iOS research app that measures tinnitus loudness using calibrated headphone‑based psychoacoustic tasks. Participants complete pitch‑matching and loudness‑matching tasks that produce scientifically interpretable, repeatable data.
+We are building an iOS research app that measures tinnitus loudness using calibrated headphone-based psychoacoustic tasks. Participants complete pitch-matching and loudness-matching tasks that produce scientifically interpretable, repeatable data.
 
 **Data collection:**
 *   Baseline hearing thresholds (via HealthKit Audiograms).
@@ -18,16 +18,23 @@ We are building an iOS research app that measures tinnitus loudness using calibr
 Upon downloading the app, the user is prompted to either **Log In** or **Sign Up**.
 
 *   **Log In:** If the user already has an account, they authenticate and proceed into the app.
-*   **Sign Up:** If the user does not have an account, they complete account creation. During signup we collect:
-    *   Name
-    *   Date of birth (DOB)
-    *   Sex
+*   **Sign Up:** If the user is new, they create an account using email/password. During signup, we collect:
+    *   First name
+    *   Last name
+    *   Date of birth
+    *   Biological sex
 
-Once the account is created (or the user logs in), the user is taken to the **Home Dashboard**.
+After signup, the user proceeds to the home dashboard.
 
 ### B. Home Dashboard (Studies List)
-The Home Dashboard shows a list of **open studies currently recruiting**.
+The home screen shows a list of available recruiting studies.
 
+For each study, the user can see:
+*   Study title
+*   Brief description
+*   Current recruitment status (recruiting, recruiting paused, closed)
+
+The user can tap into a study to view its details.
 *   If the user is **not enrolled** in a study, selecting a study displays:
     *   Study description
     *   Inclusion criteria
@@ -37,10 +44,18 @@ The Home Dashboard shows a list of **open studies currently recruiting**.
     *   **Exit** (return to the studies list)
 
 ### C. Enrollment & eConsent
-If the user chooses to enroll, they are prompted with an **eConsent** flow.
+To participate in a study, the user must:
 
-*   Upon agreement/submission, the app generates a signed consent PDF and logs a ConsentEvent (Participant ID, Version, Timestamp) to the backend.
-*   After eConsent is completed, the user is taken to the **Study Home Page**.
+1.  Review study details:
+    *   Study purpose
+    *   Inclusion / exclusion criteria
+    *   Time commitment
+    *   Data collected
+2.  Complete eConsent:
+    *   The user signs an electronic consent form.
+    *   The app stores the signed consent in the backend.
+3.  Enrollment confirmation:
+    *   Once consent is completed, the user becomes “enrolled” in the study.
 
 ### D. Study No. 1: Audiogram Import (HealthKit) Prerequisite
 For Study No. 1, the first requirement is importing an **audiogram from HealthKit**.
