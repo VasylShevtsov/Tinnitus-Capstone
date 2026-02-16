@@ -14,6 +14,9 @@ struct SignUpView: View {
         case password
     }
 
+    @EnvironmentObject private var sessionStore: SessionStore
+
+    @State private var currentStep = 1
     @State private var firstName = ""
     @State private var lastName = ""
     @State private var email = ""
@@ -21,9 +24,25 @@ struct SignUpView: View {
     @State private var dateOfBirth = Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? Date()
     @FocusState private var focusedField: Field?
 
-    private let focusColor = Color(red: 0.0, green: 0.48, blue: 1.0) // #007AFF
-    private let fieldBorderColor = Color(red: 0.82, green: 0.82, blue: 0.84) // #D1D1D6
+    private let draftStore: SignupDraftStoring
+
+    private let focusColor = Color(red: 0.0, green: 0.48, blue: 1.0)
+    private let fieldBorderColor = Color(red: 0.82, green: 0.82, blue: 0.84)
     private let actionColor = Color(red: 0.06, green: 0.24, blue: 0.44)
+
+    init(draftStore: SignupDraftStoring = SignupDraftStore()) {
+        self.draftStore = draftStore
+    }
+
+    private var isStepOneValid: Bool {
+        email.trimmingCharacters(in: .whitespacesAndNewlines).contains("@") && password.count >= 6
+    }
+
+    private var isStepTwoValid: Bool {
+        !firstName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !lastName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && dateOfBirth <= Date()
+    }
 
     var body: some View {
         ZStack {
@@ -42,83 +61,44 @@ struct SignUpView: View {
                             .foregroundStyle(.black)
                             .multilineTextAlignment(.center)
 
-                        Text("Set up your profile to start tinnitus tracking.")
+                        Text(currentStep == 1 ? "Step 1 of 2: account credentials." : "Step 2 of 2: complete your profile.")
                             .font(.system(size: 15, weight: .regular))
                             .foregroundStyle(Color.secondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 12)
 
-                    VStack(spacing: 14) {
-                        FloatingInputField(
-                            label: "First Name",
-                            text: $firstName,
-                            isSecure: false,
-                            isFocused: focusedField == .firstName,
-                            borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor
-                        )
-                        .focused($focusedField, equals: .firstName)
-
-                        FloatingInputField(
-                            label: "Last Name",
-                            text: $lastName,
-                            isSecure: false,
-                            isFocused: focusedField == .lastName,
-                            borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor
-                        )
-                        .focused($focusedField, equals: .lastName)
-
-                        FloatingInputField(
-                            label: "Email",
-                            text: $email,
-                            isSecure: false,
-                            isFocused: focusedField == .email,
-                            borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor,
-                            keyboardType: .emailAddress,
-                            clearAction: { email = "" }
-                        )
-                        .focused($focusedField, equals: .email)
-
-                        FloatingInputField(
-                            label: "Password",
-                            text: $password,
-                            isSecure: true,
-                            isFocused: focusedField == .password,
-                            borderColor: fieldBorderColor,
-                            focusedBorderColor: focusColor
-                        )
-                        .focused($focusedField, equals: .password)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Date of Birth")
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(Color.secondary)
-                            DatePicker(
-                                "",
-                                selection: $dateOfBirth,
-                                in: ...Date(),
-                                displayedComponents: .date
+                    if currentStep == 1 {
+                        VStack(spacing: 14) {
+                            FloatingInputField(
+                                label: "Email",
+                                text: $email,
+                                isSecure: false,
+                                isFocused: focusedField == .email,
+                                borderColor: fieldBorderColor,
+                                focusedBorderColor: focusColor,
+                                keyboardType: .emailAddress,
+                                accessibilityIdentifier: "signup_email_field",
+                                clearAction: { email = "" }
                             )
-                            .datePickerStyle(.compact)
-                            .labelsHidden()
-                            .tint(focusColor)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .focused($focusedField, equals: .email)
+
+                            FloatingInputField(
+                                label: "Password",
+                                text: $password,
+                                isSecure: true,
+                                isFocused: focusedField == .password,
+                                borderColor: fieldBorderColor,
+                                focusedBorderColor: focusColor,
+                                accessibilityIdentifier: "signup_password_field"
+                            )
+                            .focused($focusedField, equals: .password)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 14)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(fieldBorderColor, lineWidth: 1.2)
-                        )
 
-                    }
-
-                    Button("Create Account") {}
+                        Button("Continue") {
+                            currentStep = 2
+                            persistDraft()
+                        }
                         .font(.system(size: 17, weight: .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
@@ -126,6 +106,95 @@ struct SignUpView: View {
                         .background(actionColor)
                         .clipShape(Capsule())
                         .padding(.top, 8)
+                        .disabled(!isStepOneValid || sessionStore.isLoading)
+                        .accessibilityIdentifier("signup_continue_button")
+                    } else {
+                        VStack(spacing: 14) {
+                            FloatingInputField(
+                                label: "First Name",
+                                text: $firstName,
+                                isSecure: false,
+                                isFocused: focusedField == .firstName,
+                                borderColor: fieldBorderColor,
+                                focusedBorderColor: focusColor,
+                                accessibilityIdentifier: "signup_first_name_field"
+                            )
+                            .focused($focusedField, equals: .firstName)
+
+                            FloatingInputField(
+                                label: "Last Name",
+                                text: $lastName,
+                                isSecure: false,
+                                isFocused: focusedField == .lastName,
+                                borderColor: fieldBorderColor,
+                                focusedBorderColor: focusColor,
+                                accessibilityIdentifier: "signup_last_name_field"
+                            )
+                            .focused($focusedField, equals: .lastName)
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Date of Birth")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(Color.secondary)
+                                DatePicker(
+                                    "",
+                                    selection: $dateOfBirth,
+                                    in: ...Date(),
+                                    displayedComponents: .date
+                                )
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                                .tint(focusColor)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 14)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .stroke(fieldBorderColor, lineWidth: 1.2)
+                            )
+                        }
+
+                        HStack(spacing: 10) {
+                            Button("Back") {
+                                currentStep = 1
+                                persistDraft()
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(actionColor)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color.white)
+                            .clipShape(Capsule())
+
+                            Button("Create Account") {
+                                Task {
+                                    await sessionStore.signUp(
+                                        email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        password: password,
+                                        firstName: firstName.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        lastName: lastName.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        dateOfBirth: dateOfBirth
+                                    )
+
+                                    if sessionStore.phase != .unauthenticated {
+                                        draftStore.clear()
+                                    }
+                                }
+                            }
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(actionColor)
+                            .clipShape(Capsule())
+                            .disabled(!isStepTwoValid || sessionStore.isLoading)
+                            .accessibilityIdentifier("signup_create_account_button")
+                        }
+                        .padding(.top, 8)
+                    }
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 26)
@@ -139,8 +208,43 @@ struct SignUpView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 18)
             }
+
+            if sessionStore.isLoading {
+                ProgressView()
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear(perform: restoreDraft)
+        .onChange(of: currentStep) { _ in persistDraft() }
+        .onChange(of: email) { _ in persistDraft() }
+        .onChange(of: password) { _ in persistDraft() }
+        .onChange(of: firstName) { _ in persistDraft() }
+        .onChange(of: lastName) { _ in persistDraft() }
+        .onChange(of: dateOfBirth) { _ in persistDraft() }
+    }
+
+    private func restoreDraft() {
+        let defaultDOB = Calendar.current.date(byAdding: .year, value: -30, to: Date()) ?? Date()
+        let draft = draftStore.load(defaultDateOfBirth: defaultDOB)
+        currentStep = min(max(draft.currentStep, 1), 2)
+        email = draft.email
+        password = draft.password
+        firstName = draft.firstName
+        lastName = draft.lastName
+        dateOfBirth = draft.dateOfBirth
+    }
+
+    private func persistDraft() {
+        let draft = SignupDraft(
+            currentStep: currentStep,
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            dateOfBirth: dateOfBirth,
+            updatedAt: Date()
+        )
+        draftStore.save(draft)
     }
 }
 
@@ -152,6 +256,7 @@ private struct FloatingInputField: View {
     let borderColor: Color
     let focusedBorderColor: Color
     var keyboardType: UIKeyboardType = .default
+    var accessibilityIdentifier: String? = nil
     var clearAction: (() -> Void)? = nil
 
     private var shouldFloat: Bool {
@@ -178,9 +283,11 @@ private struct FloatingInputField: View {
             Group {
                 if isSecure {
                     SecureField("", text: $text)
+                        .accessibilityIdentifier(accessibilityIdentifier ?? "")
                 } else {
                     TextField("", text: $text)
                         .keyboardType(keyboardType)
+                        .accessibilityIdentifier(accessibilityIdentifier ?? "")
                 }
             }
             .textInputAutocapitalization(.never)
