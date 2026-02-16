@@ -1,5 +1,5 @@
 //
-//  SignUpView.swift
+//  SignUpOrLoginView.swift
 //  Tinnitus Capstone
 //
 //  Created by Anika Patel on 11/10/25.
@@ -119,8 +119,6 @@ struct SignUpOrLoginView: View {
     }
 }
 
-struct SignUpView_Previews: PreviewProvider {
-    static var previews: some View {
-        SignUpView()
-    }
+#Preview {
+    SignUpOrLoginView()
 }
