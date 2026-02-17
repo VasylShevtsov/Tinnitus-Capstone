@@ -322,4 +322,5 @@ private struct FloatingInputField: View {
     NavigationStack {
         SignUpView()
     }
+    .environmentObject(SessionStore())
 }
