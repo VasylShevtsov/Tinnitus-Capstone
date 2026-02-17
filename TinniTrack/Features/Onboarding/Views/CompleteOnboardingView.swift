@@ -60,4 +60,5 @@ struct CompleteOnboardingView: View {
 
 #Preview {
     CompleteOnboardingView()
+        .environmentObject(SessionStore())
 }
