@@ -8,14 +8,16 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject private var sessionStore: SessionStore
 
     var body: some View {
         VStack(spacing: 0) {
             // Header with menu and title
             HStack {
                 Button(action: {
-                    // Handle menu tap
-                    print("Menu tapped")
+                    Task {
+                        await sessionStore.signOut()
+                    }
                 }) {
                     Image(systemName: "line.3.horizontal")
                         .font(.system(size: 24))
