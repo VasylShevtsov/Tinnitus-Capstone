@@ -23,6 +23,14 @@ struct LoginView: View {
     private let actionColor = Color(red: 0.06, green: 0.24, blue: 0.44)
     private let secondaryTextColor = Color(red: 0.24, green: 0.24, blue: 0.28)
 
+    private var normalizedEmail: String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canSubmit: Bool {
+        !normalizedEmail.isEmpty && !password.isEmpty
+    }
+
     var body: some View {
         ZStack {
             LinearGradient(
@@ -89,21 +97,22 @@ struct LoginView: View {
                                     Spacer()
                                     Button("Forgot Password?") {
                                         Task {
-                                            await sessionStore.requestPasswordReset(email: email.trimmingCharacters(in: .whitespacesAndNewlines))
+                                            await sessionStore.requestPasswordReset(email: normalizedEmail)
                                         }
                                     }
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundStyle(focusColor)
-                                    .disabled(sessionStore.isLoading || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                    .disabled(sessionStore.isLoading || normalizedEmail.isEmpty)
                                     .accessibilityIdentifier("forgot_password_button")
                                 }
                                 .padding(.top, 2)
                             }
 
                             Button("Log In") {
+                                guard canSubmit else { return }
                                 Task {
                                     await sessionStore.signIn(
-                                        email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        email: normalizedEmail,
                                         password: password
                                     )
                                 }
@@ -115,7 +124,7 @@ struct LoginView: View {
                             .background(actionColor)
                             .clipShape(Capsule())
                             .padding(.horizontal, 12)
-                            .disabled(sessionStore.isLoading)
+                            .disabled(sessionStore.isLoading || !canSubmit)
                             .accessibilityIdentifier("login_button")
                         }
                         .padding(.horizontal, 24)
@@ -155,6 +164,7 @@ struct LoginView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .scrollDisabled(focusedField == nil)
+                .allowsHitTesting(!sessionStore.isLoading)
             }
 
             if sessionStore.isLoading {
