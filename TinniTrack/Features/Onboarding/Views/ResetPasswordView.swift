@@ -39,4 +39,5 @@ struct ResetPasswordView: View {
 
 #Preview {
     ResetPasswordView()
+        .environmentObject(SessionStore())
 }
