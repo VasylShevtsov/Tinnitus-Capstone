@@ -282,5 +282,40 @@ private struct LogoView: View {
 #Preview {
     NavigationStack {
         LoginView()
+            .environmentObject(PreviewSessionStore.make())
     }
+}
+
+// MARK: - Preview Helpers
+private struct PreviewSessionStore {
+    static func make() -> SessionStore {
+        SessionStore(
+            authService: PreviewAuthService(),
+            profileService: PreviewProfileService()
+        )
+    }
+}
+
+private final class PreviewAuthService: AuthServiceProtocol {
+    func signUp(email: String, password: String, metadata: SignUpMetadata) async throws -> SignUpResult {
+        .awaitingEmailVerification
+    }
+    func signIn(email: String, password: String) async throws {}
+    func signOut() async throws {}
+    func currentSession() async throws -> AuthSession? { nil }
+    func authStateStream() -> AsyncStream<AuthStateChange> {
+        AsyncStream { continuation in
+            continuation.finish()
+        }
+    }
+    func resendSignUpVerification(email: String, redirectURL: URL) async throws {}
+    func isEmailNotConfirmedError(_ error: Error) -> Bool { false }
+    func requestPasswordReset(email: String, redirectURL: URL) async throws {}
+    func handleAuthCallback(url: URL) async throws -> AuthCallbackResult { .none }
+    func updatePassword(newPassword: String) async throws {}
+}
+
+private final class PreviewProfileService: ProfileServiceProtocol {
+    func fetchMyProfile() async throws -> Profile? { nil }
+    func completeOnboarding(firstName: String, lastName: String, dateOfBirth: Date) async throws {}
 }
