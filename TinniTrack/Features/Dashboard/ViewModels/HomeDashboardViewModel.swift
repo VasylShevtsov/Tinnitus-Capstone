@@ -49,6 +49,7 @@ final class HomeDashboardViewModel: ObservableObject {
 
             state = studies.isEmpty ? .empty : .loaded
         } catch {
+            print("HomeDashboardViewModel.refresh() failed with error:", error)
             studies = []
             state = .empty
         }
