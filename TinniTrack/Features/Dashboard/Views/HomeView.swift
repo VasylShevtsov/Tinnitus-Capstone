@@ -100,7 +100,7 @@ private struct DashboardTabView: View {
             }
         case .empty:
             ContentUnavailableView {
-                Label("No Studies Available at this time.", systemImage: "magnifyingglass")
+                Label("No studies available at this time.", systemImage: "magnifyingglass")
             } description: {
                 Text("Please check back later.")
             }
