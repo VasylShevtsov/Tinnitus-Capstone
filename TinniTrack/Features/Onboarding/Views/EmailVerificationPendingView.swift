@@ -75,4 +75,5 @@ struct EmailVerificationPendingView: View {
 
 #Preview {
     EmailVerificationPendingView()
+        .environmentObject(SessionStore())
 }
