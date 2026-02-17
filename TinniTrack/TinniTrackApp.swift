@@ -35,7 +35,8 @@ struct TinniTrackApp: App {
                 pendingStore.clear()
             }
             if env["UITEST_CLEAR_SIGNUP_DRAFT"] == "1" {
-                SignupDraftStore().clear()
+                let draftStore = SignupDraftStore()
+                draftStore.clear()
             }
             if let pendingEmail = env["UITEST_PENDING_VERIFICATION_EMAIL"]?.trimmingCharacters(in: .whitespacesAndNewlines),
                !pendingEmail.isEmpty {
