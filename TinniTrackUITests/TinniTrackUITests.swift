@@ -111,6 +111,7 @@ final class TinniTrackUITests: XCTestCase {
     private func makeApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["UITEST_CLEAR_PENDING_VERIFICATION"] = "1"
+        app.launchEnvironment["UITEST_CLEAR_SIGNUP_DRAFT"] = "1"
         return app
     }
 }
