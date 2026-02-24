@@ -7,6 +7,25 @@ import Foundation
 import Supabase
 
 final class SupabaseProfileService: ProfileServiceProtocol {
+    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws {
+        guard let userID = try await currentUserID() else {
+            throw NSError(domain: "ProfileService", code: 401, userInfo: [NSLocalizedDescriptionKey: "No active session."])
+        }
+
+        let payload = AudiogramPayload(
+            userID: userID.uuidString,
+            measuredAt: Self.iso8601Formatter.string(from: audiogram.measuredAt),
+            source: audiogram.source,
+            headphoneName: audiogram.headphoneName,
+            frequencyData: audiogram.frequencyData
+        )
+
+        try await client
+            .from("audiograms")
+            .insert(payload)
+            .execute()
+    }
+    
     private let client: SupabaseClient
     private let calendar = Calendar(identifier: .gregorian)
 
@@ -89,6 +108,22 @@ private struct OnboardingPayload: Encodable {
     }
 }
 
+private struct AudiogramPayload: Encodable {
+    let userID: String
+    let measuredAt: String
+    let source: String
+    let headphoneName: String
+    let frequencyData: [String: Double]
+
+    enum CodingKeys: String, CodingKey {
+        case userID = "user_id"
+        case measuredAt = "measured_at"
+        case source
+        case headphoneName = "headphone_name"
+        case frequencyData = "frequency_data"
+    }
+}
+
 private struct ProfileRow: Decodable {
     let id: UUID
     let participantID: Int?
@@ -151,3 +186,4 @@ private struct ProfileRow: Decodable {
         return fallback.date(from: value)
     }
 }
+

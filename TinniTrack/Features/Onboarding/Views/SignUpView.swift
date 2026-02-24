@@ -317,10 +317,3 @@ private struct FloatingInputField: View {
         .accessibilityLabel(label)
     }
 }
-
-#Preview {
-    NavigationStack {
-        SignUpView()
-    }
-    .environmentObject(SessionStore())
-}

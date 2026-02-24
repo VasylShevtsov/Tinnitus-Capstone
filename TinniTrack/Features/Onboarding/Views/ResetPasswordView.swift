@@ -39,5 +39,5 @@ struct ResetPasswordView: View {
 
 #Preview {
     ResetPasswordView()
-        .environmentObject(SessionStore())
+        .environmentObject(SessionStore(authService: SupabaseAuthService(), profileService: SupabaseProfileService()))
 }

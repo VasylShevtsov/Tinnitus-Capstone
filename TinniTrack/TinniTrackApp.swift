@@ -102,4 +102,6 @@ private final class NoopAuthService: AuthServiceProtocol {
 private final class NoopProfileService: ProfileServiceProtocol {
     func fetchMyProfile() async throws -> Profile? { nil }
     func completeOnboarding(firstName: String, lastName: String, dateOfBirth: Date) async throws {}
+    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws {}
 }
+

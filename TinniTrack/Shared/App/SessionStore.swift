@@ -13,6 +13,7 @@ final class SessionStore: ObservableObject {
         case unauthenticated
         case awaitingEmailVerification
         case authenticatedNeedsOnboarding
+        case authenticatedNeedsHealthKitSetup
         case authenticatedReady
     }
 
@@ -27,16 +28,19 @@ final class SessionStore: ObservableObject {
     private let authService: AuthServiceProtocol
     private let profileService: ProfileServiceProtocol
     private let emailVerificationPendingStore: EmailVerificationPendingStoring
+    private let healthKitService: HealthKitServiceProtocol
     private var authStateTask: Task<Void, Never>?
 
     init(
         authService: AuthServiceProtocol,
         profileService: ProfileServiceProtocol,
-        emailVerificationPendingStore: EmailVerificationPendingStoring? = nil
+        emailVerificationPendingStore: EmailVerificationPendingStoring? = nil,
+        healthKitService: HealthKitServiceProtocol? = nil
     ) {
         self.authService = authService
         self.profileService = profileService
         self.emailVerificationPendingStore = emailVerificationPendingStore ?? EmailVerificationPendingStore()
+        self.healthKitService = healthKitService ?? HealthKitManager()
         startAuthStateListener()
 
         Task {
@@ -118,6 +122,28 @@ final class SessionStore: ObservableObject {
                 dateOfBirth: dateOfBirth
             )
         }
+    }
+
+    func completeHealthKitSetup(with audiogramData: [AudiogramData]) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            // Save each audiogram to Supabase
+            for audiogram in audiogramData {
+                try await profileService.importAudiogramFromHealthKit(audiogram)
+            }
+            infoMessage = "Health data imported successfully."
+            phase = .authenticatedReady
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func skipHealthKitSetup() async {
+        phase = .authenticatedReady
     }
 
     func signOut() async {
@@ -224,7 +250,8 @@ final class SessionStore: ObservableObject {
             profile = latestProfile
 
             if latestProfile?.isOnboardingComplete == true {
-                phase = .authenticatedReady
+                // Always show HealthKit setup screen after onboarding
+                phase = .authenticatedNeedsHealthKitSetup
             } else {
                 phase = .authenticatedNeedsOnboarding
             }
@@ -267,3 +294,4 @@ final class SessionStore: ObservableObject {
         pendingVerificationEmail = nil
     }
 }
+

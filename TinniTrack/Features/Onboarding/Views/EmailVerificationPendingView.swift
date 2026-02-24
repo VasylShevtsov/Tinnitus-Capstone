@@ -75,5 +75,5 @@ struct EmailVerificationPendingView: View {
 
 #Preview {
     EmailVerificationPendingView()
-        .environmentObject(SessionStore())
+        .environmentObject(SessionStore(authService: SupabaseAuthService(), profileService: SupabaseProfileService()))
 }

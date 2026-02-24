@@ -37,7 +37,7 @@ struct AppRootView: View {
         switch sessionStore.phase {
         case .authenticatedReady:
             HomeView()
-        case .loading, .unauthenticated, .awaitingEmailVerification, .authenticatedNeedsOnboarding:
+        case .loading, .unauthenticated, .awaitingEmailVerification, .authenticatedNeedsOnboarding, .authenticatedNeedsHealthKitSetup:
             NavigationStack {
                 switch sessionStore.phase {
                 case .loading:
@@ -48,6 +48,8 @@ struct AppRootView: View {
                     EmailVerificationPendingView()
                 case .authenticatedNeedsOnboarding:
                     CompleteOnboardingView()
+                case .authenticatedNeedsHealthKitSetup:
+                    HealthKitOnboardingView()
                 case .authenticatedReady:
                     EmptyView()
                 }
