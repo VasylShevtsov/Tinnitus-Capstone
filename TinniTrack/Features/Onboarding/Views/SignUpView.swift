@@ -322,5 +322,10 @@ private struct FloatingInputField: View {
     NavigationStack {
         SignUpView()
     }
-    .environmentObject(SessionStore())
+    .environmentObject(
+        SessionStore(
+            authService: SupabaseAuthService(),
+            profileService: SupabaseProfileService()
+        )
+    )
 }
