@@ -400,6 +400,8 @@ private final class MockProfileService: ProfileServiceProtocol {
             onboardingCompletedAt: Date()
         )
     }
+
+    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws {}
 }
 
 private final class MockEmailVerificationPendingStore: EmailVerificationPendingStoring {

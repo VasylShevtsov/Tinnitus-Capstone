@@ -40,7 +40,7 @@ struct AppRootView: View {
         switch sessionStore.state.route {
         case .ready:
             HomeView()
-        case .bootstrapping, .unauthenticated, .awaitingEmailVerification, .needsOnboarding:
+        case .bootstrapping, .unauthenticated, .awaitingEmailVerification, .needsOnboarding, .needsHealthKitSetup:
             NavigationStack {
                 switch sessionStore.state.route {
                 case .bootstrapping:
@@ -51,6 +51,8 @@ struct AppRootView: View {
                     EmailVerificationPendingView()
                 case .needsOnboarding:
                     CompleteOnboardingView()
+                case .needsHealthKitSetup:
+                    HealthKitOnboardingView()
                 case .ready:
                     EmptyView()
                 }
