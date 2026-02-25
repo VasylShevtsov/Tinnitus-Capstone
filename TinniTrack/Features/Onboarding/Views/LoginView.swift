@@ -55,8 +55,8 @@ struct LoginView: View {
                                 .font(.system(size: 31, weight: .bold))
                                 .foregroundStyle(.black)
                                 .lineLimit(1)
-                                .minimumScaleFactor(0.72)
-                                .allowsTightening(true)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .frame(height: 40)
 
                             Text("Sign in to begin your tinnitus tracking.")
                                 .font(.system(size: 15, weight: .regular))
