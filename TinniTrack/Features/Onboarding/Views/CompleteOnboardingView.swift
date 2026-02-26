@@ -60,5 +60,10 @@ struct CompleteOnboardingView: View {
 
 #Preview {
     CompleteOnboardingView()
-        .environmentObject(SessionStore())
+        .environmentObject(
+            SessionStore(
+                authService: SupabaseAuthService(),
+                profileService: SupabaseProfileService()
+            )
+        )
 }
