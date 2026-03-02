@@ -5,9 +5,16 @@
 
 import Foundation
 import Combine
+import UIKit
 
 @MainActor
 final class HealthKitOnboardingViewModel: ObservableObject {
+        /// Opens the Apple Health app using the public URL scheme.
+        func openHealthApp() {
+            if let url = URL(string: "x-apple-health://") {
+                UIApplication.shared.open(url)
+            }
+        }
     
     @Published var isLoading = false
     @Published var errorMessage: String?

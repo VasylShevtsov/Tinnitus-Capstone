@@ -50,10 +50,21 @@ struct HealthKitOnboardingView: View {
                         loadingButton
                     } else if viewModel.hasHealthKitData {
                         importButton
-                    } else {
-                        connectButton
                     }
-                    
+                    Button(action: {
+                        viewModel.openHealthApp()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "heart.text.square")
+                            Text("Open Health App")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                    }
                     skipButton
                 }
                 .padding(.horizontal, 20)
@@ -160,23 +171,21 @@ struct HealthKitOnboardingView: View {
                 Image(systemName: "iphone.gen3")
                     .font(.system(size: 24))
                     .foregroundStyle(.blue)
-                
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ready to Connect")
+                    Text("No Hearing Test Found")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
-                    
-                    Text("Grant access to Apple Health")
+                    Text("To continue, please take a hearing test in the Apple Health app. Go to Health > Browse > Hearing > Audiogram, then follow the instructions to add a new hearing test. Return here after completing the test.")
                         .font(.system(size: 14, weight: .regular))
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
                 }
-                
                 Spacer()
             }
             .padding(16)
             .background(Color(uiColor: .secondarySystemGroupedBackground))
             .cornerRadius(12)
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 8) {
                     infoRow("•", "Authorization is secure and encrypted")
