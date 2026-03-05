@@ -38,7 +38,7 @@ struct HomeView: View {
     }
 
     private var displayFirstName: String {
-        let trimmed = sessionStore.profile?.firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let trimmed = sessionStore.state.profile?.firstName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? "Participant" : trimmed
     }
 }
@@ -335,8 +335,8 @@ private struct ProfileTabView: View {
     var body: some View {
         Form {
             Section("Profile") {
-                LabeledContent("First Name", value: sessionStore.profile?.firstName ?? "Not set")
-                LabeledContent("Last Name", value: sessionStore.profile?.lastName ?? "Not set")
+                LabeledContent("First Name", value: sessionStore.state.profile?.firstName ?? "Not set")
+                LabeledContent("Last Name", value: sessionStore.state.profile?.lastName ?? "Not set")
             }
 
             Section("Research") {
@@ -361,7 +361,7 @@ private struct ProfileTabView: View {
     }
 
     private var participantIDText: String {
-        guard let participantID = sessionStore.profile?.participantID else { return "Unavailable" }
+        guard let participantID = sessionStore.state.profile?.participantID else { return "Unavailable" }
         return String(participantID)
     }
 
