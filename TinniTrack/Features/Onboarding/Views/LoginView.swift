@@ -102,7 +102,7 @@ struct LoginView: View {
                                     }
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundStyle(focusColor)
-                                    .disabled(sessionStore.isLoading || normalizedEmail.isEmpty)
+                                    .disabled(sessionStore.state.isBusy || normalizedEmail.isEmpty)
                                     .accessibilityIdentifier("forgot_password_button")
                                 }
                                 .padding(.top, 2)
@@ -124,7 +124,7 @@ struct LoginView: View {
                             .background(actionColor)
                             .clipShape(Capsule())
                             .padding(.horizontal, 12)
-                            .disabled(sessionStore.isLoading || !canSubmit)
+                            .disabled(sessionStore.state.isBusy || !canSubmit)
                             .accessibilityIdentifier("login_button")
                         }
                         .padding(.horizontal, 24)
@@ -164,10 +164,10 @@ struct LoginView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .scrollDisabled(focusedField == nil)
-                .allowsHitTesting(!sessionStore.isLoading)
+                .allowsHitTesting(!sessionStore.state.isBusy)
             }
 
-            if sessionStore.isLoading {
+            if sessionStore.state.isBusy {
                 ProgressView()
             }
         }
@@ -283,4 +283,5 @@ private struct LogoView: View {
     NavigationStack {
         LoginView()
     }
+    .environmentObject(SessionStoreFactory.makePreviewStore())
 }
