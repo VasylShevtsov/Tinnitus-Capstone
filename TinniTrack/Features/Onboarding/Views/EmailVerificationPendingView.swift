@@ -24,7 +24,7 @@ struct EmailVerificationPendingView: View {
                 .multilineTextAlignment(.center)
                 .accessibilityIdentifier("email_verification_title")
 
-            if let email = sessionStore.pendingVerificationEmail {
+            if let email = sessionStore.state.pendingVerificationEmail {
                 Text("We sent a verification link to \(email). Open that email on this device to continue.")
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
@@ -76,9 +76,6 @@ struct EmailVerificationPendingView: View {
 #Preview {
     EmailVerificationPendingView()
         .environmentObject(
-            SessionStore(
-                authService: SupabaseAuthService(),
-                profileService: SupabaseProfileService()
-            )
+            SessionStoreFactory.makePreviewStore(.awaitingEmailVerification(email: "pending@example.com"))
         )
 }

@@ -107,7 +107,7 @@ struct SignUpView: View {
                         .background(actionColor)
                         .clipShape(Capsule())
                         .padding(.top, 8)
-                        .disabled(!isStepOneValid || sessionStore.isLoading)
+                        .disabled(!isStepOneValid || sessionStore.state.isBusy)
                         .accessibilityIdentifier("signup_continue_button")
                     } else {
                         VStack(spacing: 14) {
@@ -180,7 +180,7 @@ struct SignUpView: View {
                                         dateOfBirth: dateOfBirth
                                     )
 
-                                    if sessionStore.phase != .unauthenticated {
+                                    if !sessionStore.state.isUnauthenticated {
                                         draftStore.clear()
                                     }
                                 }
@@ -191,7 +191,7 @@ struct SignUpView: View {
                             .frame(height: 52)
                             .background(actionColor)
                             .clipShape(Capsule())
-                            .disabled(!isStepTwoValid || sessionStore.isLoading)
+                            .disabled(!isStepTwoValid || sessionStore.state.isBusy)
                             .accessibilityIdentifier("signup_create_account_button")
                         }
                         .padding(.top, 8)
@@ -210,7 +210,7 @@ struct SignUpView: View {
                 .padding(.vertical, 18)
             }
 
-            if sessionStore.isLoading {
+            if sessionStore.state.isBusy {
                 ProgressView()
             }
         }
@@ -322,10 +322,5 @@ private struct FloatingInputField: View {
     NavigationStack {
         SignUpView()
     }
-    .environmentObject(
-        SessionStore(
-            authService: SupabaseAuthService(),
-            profileService: SupabaseProfileService()
-        )
-    )
+    .environmentObject(SessionStoreFactory.makePreviewStore())
 }

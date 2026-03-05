@@ -29,7 +29,7 @@ struct ResetPasswordView: View {
                             await sessionStore.submitNewPassword(newPassword)
                         }
                     }
-                    .disabled(!canSubmit || sessionStore.isLoading)
+                    .disabled(!canSubmit || sessionStore.state.isBusy)
                 }
             }
             .navigationTitle("Reset Password")
@@ -39,10 +39,5 @@ struct ResetPasswordView: View {
 
 #Preview {
     ResetPasswordView()
-        .environmentObject(
-            SessionStore(
-                authService: SupabaseAuthService(),
-                profileService: SupabaseProfileService()
-            )
-        )
+        .environmentObject(SessionStoreFactory.makePreviewStore())
 }

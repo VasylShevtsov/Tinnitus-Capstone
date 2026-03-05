@@ -37,7 +37,7 @@ struct CompleteOnboardingView: View {
                             )
                         }
                     }
-                    .disabled(!canSubmit || sessionStore.isLoading)
+                    .disabled(!canSubmit || sessionStore.state.isBusy)
 
                     Button("Sign Out", role: .destructive) {
                         Task {
@@ -48,7 +48,7 @@ struct CompleteOnboardingView: View {
             }
             .navigationTitle("Onboarding")
             .onAppear {
-                if let profile = sessionStore.profile {
+                if let profile = sessionStore.state.profile {
                     firstName = profile.firstName ?? firstName
                     lastName = profile.lastName ?? lastName
                     dateOfBirth = profile.dateOfBirth ?? dateOfBirth
@@ -60,10 +60,5 @@ struct CompleteOnboardingView: View {
 
 #Preview {
     CompleteOnboardingView()
-        .environmentObject(
-            SessionStore(
-                authService: SupabaseAuthService(),
-                profileService: SupabaseProfileService()
-            )
-        )
+        .environmentObject(SessionStoreFactory.makePreviewStore(.authenticatedNeedsOnboarding))
 }

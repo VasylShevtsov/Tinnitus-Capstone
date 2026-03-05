@@ -10,23 +10,26 @@ struct AppRootView: View {
 
     var body: some View {
         rootContent
-        .alert("Error", isPresented: Binding(
-            get: { sessionStore.errorMessage != nil },
-            set: { _ in sessionStore.dismissError() }
+        .alert(sessionStore.state.banner?.title ?? "Info", isPresented: Binding(
+            get: { sessionStore.state.banner != nil },
+            set: { shouldPresent in
+                if !shouldPresent {
+                    sessionStore.dismissBanner()
+                }
+            }
         )) {
-            Button("OK", role: .cancel) { sessionStore.dismissError() }
+            Button("OK", role: .cancel) { sessionStore.dismissBanner() }
         } message: {
-            Text(sessionStore.errorMessage ?? "")
+            Text(sessionStore.state.banner?.message ?? "")
         }
-        .alert("Info", isPresented: Binding(
-            get: { sessionStore.infoMessage != nil },
-            set: { _ in sessionStore.dismissInfo() }
+        .fullScreenCover(isPresented: Binding(
+            get: { sessionStore.state.passwordResetPresented },
+            set: { isPresented in
+                if !isPresented {
+                    sessionStore.dismissPasswordResetSheet()
+                }
+            }
         )) {
-            Button("OK", role: .cancel) { sessionStore.dismissInfo() }
-        } message: {
-            Text(sessionStore.infoMessage ?? "")
-        }
-        .fullScreenCover(isPresented: $sessionStore.shouldPresentPasswordReset) {
             ResetPasswordView()
                 .environmentObject(sessionStore)
         }
@@ -34,21 +37,21 @@ struct AppRootView: View {
 
     @ViewBuilder
     private var rootContent: some View {
-        switch sessionStore.phase {
-        case .authenticatedReady:
+        switch sessionStore.state.route {
+        case .ready:
             HomeView()
-        case .loading, .unauthenticated, .awaitingEmailVerification, .authenticatedNeedsOnboarding:
+        case .bootstrapping, .unauthenticated, .awaitingEmailVerification, .needsOnboarding:
             NavigationStack {
-                switch sessionStore.phase {
-                case .loading:
+                switch sessionStore.state.route {
+                case .bootstrapping:
                     ProgressView("Loading…")
                 case .unauthenticated:
                     LoginView()
                 case .awaitingEmailVerification:
                     EmailVerificationPendingView()
-                case .authenticatedNeedsOnboarding:
+                case .needsOnboarding:
                     CompleteOnboardingView()
-                case .authenticatedReady:
+                case .ready:
                     EmptyView()
                 }
             }
@@ -58,4 +61,5 @@ struct AppRootView: View {
 
 #Preview {
     AppRootView()
+        .environmentObject(SessionStoreFactory.makePreviewStore())
 }

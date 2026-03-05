@@ -36,10 +36,14 @@ final class SupabaseAuthService: AuthServiceProtocol {
     }
 
     func signIn(email: String, password: String) async throws {
-        try await client.auth.signIn(
-            email: email,
-            password: password
-        )
+        do {
+            try await client.auth.signIn(
+                email: email,
+                password: password
+            )
+        } catch {
+            throw Self.mapAuthError(error)
+        }
     }
 
     func signOut() async throws {
@@ -51,7 +55,11 @@ final class SupabaseAuthService: AuthServiceProtocol {
             let session = try await client.auth.session
             return AuthSession(userID: session.user.id)
         } catch {
-            return nil
+            let mapped = Self.mapAuthError(error)
+            if case .noActiveSession = mapped {
+                return nil
+            }
+            throw mapped
         }
     }
 
@@ -76,45 +84,47 @@ final class SupabaseAuthService: AuthServiceProtocol {
     }
 
     func resendSignUpVerification(email: String, redirectURL: URL) async throws {
-        try await client.auth.resend(
-            email: email,
-            type: .signup,
-            emailRedirectTo: redirectURL
-        )
-    }
-
-    func isEmailNotConfirmedError(_ error: Error) -> Bool {
-        let message = error.localizedDescription.lowercased()
-        return message.contains("email not confirmed")
-            || message.contains("email_not_confirmed")
-            || message.contains("email not verified")
+        do {
+            try await client.auth.resend(
+                email: email,
+                type: .signup,
+                emailRedirectTo: redirectURL
+            )
+        } catch {
+            throw Self.mapAuthError(error)
+        }
     }
 
     func requestPasswordReset(email: String, redirectURL: URL) async throws {
-        try await client.auth.resetPasswordForEmail(
-            email,
-            redirectTo: redirectURL
-        )
+        do {
+            try await client.auth.resetPasswordForEmail(
+                email,
+                redirectTo: redirectURL
+            )
+        } catch {
+            throw Self.mapAuthError(error)
+        }
     }
 
     func handleAuthCallback(url: URL) async throws -> AuthCallbackResult {
         let params = Self.authParams(from: url)
 
         if let errorDescription = params["error_description"], !errorDescription.isEmpty {
-            throw NSError(
-                domain: "AuthCallback",
-                code: 400,
-                userInfo: [NSLocalizedDescriptionKey: errorDescription.replacingOccurrences(of: "+", with: " ")]
-            )
+            let message = errorDescription.replacingOccurrences(of: "+", with: " ")
+            throw AuthServiceError.callbackFailed(message)
         }
 
-        if let accessToken = params["access_token"],
-           let refreshToken = params["refresh_token"],
-           !accessToken.isEmpty,
-           !refreshToken.isEmpty {
-            _ = try await client.auth.setSession(accessToken: accessToken, refreshToken: refreshToken)
-        } else {
-            _ = try await client.auth.session(from: url)
+        do {
+            if let accessToken = params["access_token"],
+               let refreshToken = params["refresh_token"],
+               !accessToken.isEmpty,
+               !refreshToken.isEmpty {
+                _ = try await client.auth.setSession(accessToken: accessToken, refreshToken: refreshToken)
+            } else {
+                _ = try await client.auth.session(from: url)
+            }
+        } catch {
+            throw Self.mapAuthError(error)
         }
 
         if Self.isRecoveryURL(url) {
@@ -124,9 +134,13 @@ final class SupabaseAuthService: AuthServiceProtocol {
     }
 
     func updatePassword(newPassword: String) async throws {
-        try await client.auth.update(
-            user: UserAttributes(password: newPassword)
-        )
+        do {
+            try await client.auth.update(
+                user: UserAttributes(password: newPassword)
+            )
+        } catch {
+            throw Self.mapAuthError(error)
+        }
     }
 
     private static func mapEvent(description: String) -> AuthEvent {
@@ -146,6 +160,37 @@ final class SupabaseAuthService: AuthServiceProtocol {
         default:
             return .unknown
         }
+    }
+
+    private static func mapAuthError(_ error: Error) -> AuthServiceError {
+        let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowercased = message.lowercased()
+
+        if lowercased.contains("email not confirmed")
+            || lowercased.contains("email_not_confirmed")
+            || lowercased.contains("email not verified") {
+            return .emailNotConfirmed
+        }
+
+        if lowercased.contains("auth session missing")
+            || lowercased.contains("session missing")
+            || lowercased.contains("invalid refresh token")
+            || lowercased.contains("refresh token not found")
+            || lowercased.contains("session_not_found") {
+            return .noActiveSession
+        }
+
+        if lowercased.contains("network")
+            || lowercased.contains("offline")
+            || lowercased.contains("timed out")
+            || lowercased.contains("connection") {
+            return .transport(message.isEmpty ? "Network request failed." : message)
+        }
+
+        if message.isEmpty {
+            return .unknown("Authentication failed.")
+        }
+        return .unknown(message)
     }
 
     private static func isRecoveryURL(_ url: URL) -> Bool {
