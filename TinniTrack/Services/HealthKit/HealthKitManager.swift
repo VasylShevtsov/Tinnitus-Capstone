@@ -133,33 +133,53 @@ final class HealthKitManager: HealthKitServiceProtocol {
                 return nil
             }
             
-            // Extract frequency-threshold pairs from HKAudiogramSample
-            var pairs: [(frequency: Double, threshold: Double)] = []
+            // Extract frequency-threshold pairs from HKAudiogramSample by collecting left/right values when available
+            // Build a map of frequency -> (leftValues, rightValues)
+            var byFrequency: [Double: (left: [Double], right: [Double])] = [:]
 
             for point in audiogram.sensitivityPoints {
-                let frequency = point.frequency.doubleValue(for: .hertz())
-
-                // HKAudiogramSensitivityPoint exposes leftEarSensitivity and rightEarSensitivity.
-                // Prefer the average when both are present; otherwise use the available ear.
-                let left = point.leftEarSensitivity?.doubleValue(for: .decibelHearingLevel())
-                let right = point.rightEarSensitivity?.doubleValue(for: .decibelHearingLevel())
-
-                let threshold: Double?
-                if let l = left, let r = right {
-                    threshold = (l + r) / 2.0
-                } else {
-                    threshold = left ?? right
+                let frequency = point.frequency.doubleValue(for: HKUnit.hertz())
+                // HKAudiogramSensitivityPoint exposes optional left/right ear sensitivities as quantities
+                if let leftQ = point.leftEarSensitivity {
+                    let leftValue = leftQ.doubleValue(for: HKUnit.decibelHearingLevel())
+                    var entry = byFrequency[frequency] ?? (left: [], right: [])
+                    entry.left.append(leftValue)
+                    byFrequency[frequency] = entry
                 }
-
-                if let threshold { pairs.append((frequency, threshold)) }
+                if let rightQ = point.rightEarSensitivity {
+                    let rightValue = rightQ.doubleValue(for: HKUnit.decibelHearingLevel())
+                    var entry = byFrequency[frequency] ?? (left: [], right: [])
+                    entry.right.append(rightValue)
+                    byFrequency[frequency] = entry
+                }
             }
 
-            guard !pairs.isEmpty else { return nil }
+            // Compute averaged thresholds per frequency, averaging left/right when both available
+            let sortedFrequencies = byFrequency.keys.sorted()
+            guard !sortedFrequencies.isEmpty else { return nil }
 
-            // Sort by frequency to keep frequencies and thresholds aligned
-            let sorted = pairs.sorted { $0.frequency < $1.frequency }
-            let frequencies = sorted.map { $0.frequency }
-            let thresholds = sorted.map { $0.threshold }
+            var frequencies: [Double] = []
+            var thresholds: [Double] = []
+
+            for freq in sortedFrequencies {
+                let entry = byFrequency[freq] ?? (left: [], right: [])
+                let leftAvg = entry.left.isEmpty ? nil : (entry.left.reduce(0, +) / Double(entry.left.count))
+                let rightAvg = entry.right.isEmpty ? nil : (entry.right.reduce(0, +) / Double(entry.right.count))
+
+                let threshold: Double?
+                if let l = leftAvg, let r = rightAvg {
+                    threshold = (l + r) / 2.0
+                } else {
+                    threshold = leftAvg ?? rightAvg
+                }
+
+                if let t = threshold {
+                    frequencies.append(freq)
+                    thresholds.append(t)
+                }
+            }
+
+            guard !frequencies.isEmpty, frequencies.count == thresholds.count else { return nil }
 
             return HealthKitAudiogramSample(
                 date: audiogram.startDate,

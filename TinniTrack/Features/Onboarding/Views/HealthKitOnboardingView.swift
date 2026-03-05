@@ -18,33 +18,24 @@ struct HealthKitOnboardingView: View {
         ZStack {
             Color(uiColor: .systemGroupedBackground)
                 .ignoresSafeArea()
-            
             VStack(spacing: 0) {
-                // Scrollable content
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 28) {
-                        // Hero Section
                         heroSection
-                        
-                        // Content based on state
                         if viewModel.isLoading {
-                            loadingSection
+                            LoadingSection()
                         } else if viewModel.hasHealthKitData {
-                            dataFoundSection
+                            DataFoundSection(dataCount: viewModel.healthKitDataCount)
                         } else {
-                            noDataSection
+                            NoDataSection(openHealthApp: viewModel.openHealthApp)
                         }
-                        
                         Spacer(minLength: 40)
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 32)
                 }
-                
-                // Fixed Action Buttons at bottom
                 Divider()
                     .padding(.vertical, 12)
-                
                 VStack(spacing: 12) {
                     if viewModel.isLoading {
                         loadingButton
@@ -101,117 +92,120 @@ struct HealthKitOnboardingView: View {
     
     // MARK: - Content Sections
     
-    private var loadingSection: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 12) {
-                ProgressView()
-                    .scaleEffect(1.1, anchor: .center)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Checking Apple Health")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    
-                    Text("This may take a moment")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-            }
-            .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .cornerRadius(12)
-        }
-    }
-    
-    private var dataFoundSection: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 12) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.green)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Hearing Tests Found")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    
-                    Text("\(viewModel.healthKitDataCount) test\(viewModel.healthKitDataCount == 1 ? "" : "s") available for import")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(.secondary)
-                }
-                
-                Spacer()
-            }
-            .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .cornerRadius(12)
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("What happens next:")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    infoRow("1", "Your tests will be imported securely")
-                    infoRow("2", "Data is encrypted in transit")
-                    infoRow("3", "Used only for this research study")
-                }
-            }
-            .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .cornerRadius(12)
-        }
-    }
-    
-    private var noDataSection: some View {
-        VStack(spacing: 16) {
-            HStack(spacing: 12) {
-                Image(systemName: "iphone.gen3")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.blue)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("No Hearing Test Found")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                    Text("To continue, please take a hearing test in the Apple Health app. Go to Health > Browse > Hearing > Audiogram, then follow the instructions to add a new hearing test. Return here after completing the test.")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer()
-            }
-            .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .cornerRadius(12)
+    // MARK: - Subviews
 
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(alignment: .leading, spacing: 8) {
-                    infoRow("•", "Authorization is secure and encrypted")
-                    infoRow("•", "You can revoke access anytime in Settings")
-                    infoRow("•", "Your privacy is fully protected")
+    private struct LoadingSection: View {
+        var body: some View {
+            VStack(spacing: 16) {
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .scaleEffect(1.1, anchor: .center)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Checking Apple Health")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Text("This may take a moment")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
                 }
+                .padding(16)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .cornerRadius(12)
             }
-            .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
-            .cornerRadius(12)
         }
     }
     
-    private func infoRow(_ icon: String, _ text: String) -> some View {
-        HStack(spacing: 10) {
-            Text(icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 20)
-            
-            Text(text)
-                .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
-            
-            Spacer()
+    private struct DataFoundSection: View {
+        let dataCount: Int
+        var body: some View {
+            VStack(spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.green)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Hearing Tests Found")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Text("\(dataCount) test\(dataCount == 1 ? "" : "s") available for import")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .cornerRadius(12)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("What happens next:")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        InfoRow(icon: "1", text: "Your tests will be imported securely")
+                        InfoRow(icon: "2", text: "Data is encrypted in transit")
+                        InfoRow(icon: "3", text: "Used only for this research study")
+                    }
+                }
+                .padding(16)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .cornerRadius(12)
+            }
+        }
+    }
+    
+    private struct NoDataSection: View {
+        let openHealthApp: () -> Void
+        var body: some View {
+            VStack(spacing: 16) {
+                HStack(spacing: 12) {
+                    Image(systemName: "iphone.gen3")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.blue)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("No Hearing Test Found")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                        Text("To continue, please take a hearing test in the Apple Health app. Go to Health > Browse > Hearing > Audiogram, then follow the instructions to add a new hearing test. Return here after completing the test.")
+                            .font(.system(size: 14, weight: .regular))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .cornerRadius(12)
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        InfoRow(icon: "•", text: "Authorization is secure and encrypted")
+                        InfoRow(icon: "•", text: "You can revoke access anytime in Settings")
+                        InfoRow(icon: "•", text: "Your privacy is fully protected")
+                    }
+                }
+                .padding(16)
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .cornerRadius(12)
+            }
+        }
+    }
+    
+    private struct InfoRow: View {
+        let icon: String
+        let text: String
+        var body: some View {
+            HStack(spacing: 10) {
+                Text(icon)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20)
+                Text(text)
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                Spacer()
+            }
         }
     }
     

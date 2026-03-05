@@ -123,7 +123,14 @@ private struct DashboardTabView: View {
     @ViewBuilder
     private func destination(for studyCard: DashboardStudyCard) -> some View {
         if studyCard.isEnrolledActive {
-            StudyTaskDashboardView(study: studyCard.study)
+            if let enrollmentID = studyCard.enrollment?.id {
+                StudyTaskDashboardView(study: studyCard.study, enrollmentID: enrollmentID)
+            } else {
+                // Fallback if enrollment ID is unexpectedly unavailable
+                StudyDetailView(studyCard: studyCard) {
+                    try await viewModel.enroll(studyID: studyCard.study.id)
+                }
+            }
         } else {
             StudyDetailView(studyCard: studyCard) {
                 try await viewModel.enroll(studyID: studyCard.study.id)
@@ -307,24 +314,123 @@ private struct StudyDetailView: View {
     ]
 }
 
+
+import Supabase
+import Combine
+
+struct ScheduledTask: Identifiable, Decodable {
+    let id: UUID
+    let enrollment_id: UUID
+    let task_key: String
+    let status: String
+    let scheduled_for: Date
+    let window_start: Date
+    let window_end: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case enrollment_id
+        case task_key
+        case status
+        case scheduled_for
+        case window_start
+        case window_end
+    }
+}
+
+@MainActor
+class StudyTaskDashboardViewModel: ObservableObject {
+    let objectWillChange = ObservableObjectPublisher()
+
+    @Published var tasks: [ScheduledTask] = []
+    let enrollmentID: UUID
+    let service: SupabaseClient
+
+    init(enrollmentID: UUID, service: SupabaseClient) {
+        self.enrollmentID = enrollmentID
+        self.service = service
+    }
+
+    func loadTasks() async {
+        do {
+            let rows: [ScheduledTask] = try await service
+                .from("scheduled_tasks")
+                .select("*")
+                .eq("enrollment_id", value: enrollmentID.uuidString)
+                .execute()
+                .value
+            print("Fetched scheduled tasks:", rows)
+            tasks = rows
+        } catch {
+            print("Failed to fetch tasks:", error)
+        }
+    }
+}
+
 private struct StudyTaskDashboardView: View {
     let study: Study
+    let enrollmentID: UUID
+    @StateObject private var viewModel: StudyTaskDashboardViewModel
+    @State private var showLoudnessMatch = false
+
+    init(study: Study, enrollmentID: UUID, service: SupabaseClient = supabase) {
+        print("StudyTaskDashboardView initialized with enrollmentID:", enrollmentID)
+        _viewModel = StateObject(wrappedValue: StudyTaskDashboardViewModel(enrollmentID: enrollmentID, service: service))
+        self.study = study
+        self.enrollmentID = enrollmentID
+    }
 
     var body: some View {
-        List {
-            Section("Future Tasks") {
-                Text("No upcoming tasks yet.")
-                    .foregroundStyle(.secondary)
+        let now = Date()
+        let futureTasks = viewModel.tasks.filter { task in
+            let passes = task.status == "scheduled" && task.window_start <= now && task.window_end >= now
+            print("Task \(task.task_key): status=\(task.status), start=\(task.window_start), end=\(task.window_end), now=\(now), passes=\(passes)")
+            return passes
+        }
+        
+        return List {
+            Section("Test") {
+                Button("Show Loudness Match (Test)") {
+                    showLoudnessMatch = true
+                }
+                .foregroundStyle(.blue)
             }
-
+            
+            Section("Future Tasks") {
+                if futureTasks.isEmpty {
+                    Text("No upcoming tasks yet.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(futureTasks) { task in
+                        Button(task.task_key) {
+                            if task.task_key == "lm_1khz_v1" {
+                                showLoudnessMatch = true
+                            }
+                        }
+                    }
+                }
+            }
             Section("Completed Tasks") {
-                Text("No completed tasks yet.")
-                    .foregroundStyle(.secondary)
+                let completedTasks = viewModel.tasks.filter { $0.status == "completed" }
+                if completedTasks.isEmpty {
+                    Text("No completed tasks yet.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(completedTasks) { task in
+                        Text(task.task_key)
+                    }
+                }
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle(study.title)
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await viewModel.loadTasks()
+        }
+        .sheet(isPresented: $showLoudnessMatch) {
+            LoudnessMatchView()
+        }
     }
 }
 
@@ -451,3 +557,4 @@ private extension DashboardStudyCard {
         }
     }
 }
+
