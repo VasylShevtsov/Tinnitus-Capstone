@@ -11,6 +11,7 @@ final class HomeDashboardViewModel: ObservableObject {
     @Published private(set) var state: State = .loading
     @Published private(set) var studies: [DashboardStudyCard] = []
     @Published private(set) var enrollingStudyID: UUID?
+    @Published private(set) var isRefreshing = false
 
     enum State: Equatable {
         case loading
@@ -31,8 +32,24 @@ final class HomeDashboardViewModel: ObservableObject {
         await refresh()
     }
 
-    func refresh() async {
-        state = .loading
+    func refreshForLifecycleEvent() async {
+        guard hasLoadedOnce else { return }
+        await refresh(retainingCurrentContent: true)
+    }
+
+    func refresh(retainingCurrentContent: Bool = false) async {
+        guard !isRefreshing else { return }
+
+        let previousStudies = studies
+        let previousState = state
+        let shouldShowBlockingLoading = !retainingCurrentContent || previousStudies.isEmpty
+        if shouldShowBlockingLoading {
+            state = .loading
+        }
+
+        isRefreshing = true
+        defer { isRefreshing = false }
+
         do {
             async let studiesTask = studyService.fetchStudies()
             async let enrollmentsTask = studyService.fetchMyEnrollments()
@@ -49,11 +66,23 @@ final class HomeDashboardViewModel: ObservableObject {
             }
 
             state = studies.isEmpty ? .empty : .loaded
+            hasLoadedOnce = true
         } catch {
-            studies = []
-            state = .failed(message: Self.userFacingErrorMessage(for: error))
+            if Self.isCancellation(error) {
+                studies = previousStudies
+                state = previousState
+                return
+            }
+
+            hasLoadedOnce = true
+            if previousStudies.isEmpty {
+                studies = []
+                state = .failed(message: Self.userFacingErrorMessage(for: error))
+            } else {
+                studies = previousStudies
+                state = .loaded
+            }
         }
-        hasLoadedOnce = true
     }
 
     func enroll(studyID: UUID) async throws {
@@ -66,6 +95,19 @@ final class HomeDashboardViewModel: ObservableObject {
     private static func userFacingErrorMessage(for error: Error) -> String {
         let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
         return message.isEmpty ? "Unable to load studies right now. Please try again." : message
+    }
+
+    private static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError {
+            return true
+        }
+
+        if let urlError = error as? URLError, urlError.code == .cancelled {
+            return true
+        }
+
+        let nsError = error as NSError
+        return nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled
     }
 }
 

@@ -49,6 +49,7 @@ private enum Tab {
 }
 
 private struct DashboardTabView: View {
+    @Environment(\.scenePhase) private var scenePhase
     let firstName: String
     @ObservedObject var viewModel: HomeDashboardViewModel
 
@@ -74,8 +75,11 @@ private struct DashboardTabView: View {
         .task {
             await viewModel.loadIfNeeded()
         }
-        .refreshable {
-            await viewModel.refresh()
+        .onChange(of: scenePhase) { newPhase in
+            guard newPhase == .active else { return }
+            Task {
+                await viewModel.refreshForLifecycleEvent()
+            }
         }
     }
 
@@ -115,9 +119,10 @@ private struct DashboardTabView: View {
                 }
 
                 Button("Retry") {
-                    Task { await viewModel.refresh() }
+                    Task { await viewModel.refresh(retainingCurrentContent: false) }
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(viewModel.isRefreshing)
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 24)
