@@ -292,7 +292,7 @@ final class SessionStore: ObservableObject {
     func checkEmailVerificationStatus() async {
         await execute(activity: .checkingVerificationStatus) { [self] in
             await refreshRoute(preserveRouteOnFailure: true)
-            if case .awaitingEmailVerification = state.route {
+            if case .awaitingEmailVerification = state.route, state.banner == nil {
                 state.banner = .info("Still waiting for verification. Open the email link on this device.")
             }
         }

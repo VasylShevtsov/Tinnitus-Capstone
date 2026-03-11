@@ -16,6 +16,7 @@ final class HomeDashboardViewModel: ObservableObject {
         case loading
         case loaded
         case empty
+        case failed(message: String)
     }
 
     private let studyService: StudyServiceProtocol
@@ -49,9 +50,8 @@ final class HomeDashboardViewModel: ObservableObject {
 
             state = studies.isEmpty ? .empty : .loaded
         } catch {
-            print("HomeDashboardViewModel.refresh() failed with error:", error)
             studies = []
-            state = .empty
+            state = .failed(message: Self.userFacingErrorMessage(for: error))
         }
         hasLoadedOnce = true
     }
@@ -61,6 +61,11 @@ final class HomeDashboardViewModel: ObservableObject {
         defer { enrollingStudyID = nil }
         try await studyService.enroll(studyID: studyID)
         await refresh()
+    }
+
+    private static func userFacingErrorMessage(for error: Error) -> String {
+        let message = error.localizedDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+        return message.isEmpty ? "Unable to load studies right now. Please try again." : message
     }
 }
 

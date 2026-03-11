@@ -106,6 +106,21 @@ private struct DashboardTabView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 24)
+        case .failed(let message):
+            VStack(spacing: 12) {
+                ContentUnavailableView {
+                    Label("Unable to Load Studies", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                }
+
+                Button("Retry") {
+                    Task { await viewModel.refresh() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 24)
         case .loaded:
             LazyVStack(spacing: 16) {
                 ForEach(viewModel.studies) { studyCard in
