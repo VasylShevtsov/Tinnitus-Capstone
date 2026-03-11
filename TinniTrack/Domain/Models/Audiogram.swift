@@ -51,6 +51,7 @@ struct AudiogramSensitivityTest: Codable, Equatable {
 enum AudiogramPrerequisiteState: Equatable {
     case met(latestMeasuredAt: Date?)
     case needsPermission
+    case permissionDenied
     case noAudiogramInHealth
     case error(message: String)
 }

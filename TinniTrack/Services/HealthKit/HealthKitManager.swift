@@ -43,10 +43,6 @@ final class HealthKitManager: HealthKitAudiogramServiceProtocol {
         } catch {
             throw HealthKitAudiogramServiceError.queryFailed(error.localizedDescription)
         }
-
-        if readAuthorizationStatus() == .denied {
-            throw HealthKitAudiogramServiceError.authorizationDenied
-        }
     }
 
     func fetchAudiogramSamples() async throws -> [HealthKitAudiogramSample] {
@@ -57,11 +53,9 @@ final class HealthKitManager: HealthKitAudiogramServiceProtocol {
         switch readAuthorizationStatus() {
         case .notDetermined:
             throw HealthKitAudiogramServiceError.authorizationNotDetermined
-        case .denied:
-            throw HealthKitAudiogramServiceError.authorizationDenied
         case .unavailable:
             throw HealthKitAudiogramServiceError.dataUnavailable
-        case .authorized:
+        case .authorized, .denied:
             break
         }
 
@@ -76,6 +70,14 @@ final class HealthKitManager: HealthKitAudiogramServiceProtocol {
                 sortDescriptors: [sort]
             ) { _, samples, error in
                 if let error {
+                    if let healthError = error as? HKError,
+                       healthError.code == .errorAuthorizationDenied {
+                        continuation.resume(
+                            throwing: HealthKitAudiogramServiceError.authorizationDenied
+                        )
+                        return
+                    }
+
                     continuation.resume(
                         throwing: HealthKitAudiogramServiceError.queryFailed(error.localizedDescription)
                     )

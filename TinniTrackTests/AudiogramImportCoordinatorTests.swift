@@ -22,6 +22,67 @@ struct AudiogramImportCoordinatorTests {
     }
 
     @Test
+    func evaluatePrerequisitePermissionDeniedWhenAuthorizationDenied() async {
+        let healthKitService = MockHealthKitAudiogramService()
+        healthKitService.status = .denied
+        healthKitService.fetchError = HealthKitAudiogramServiceError.authorizationDenied
+
+        let repository = MockAudiogramRepository()
+        repository.latestAudiogram = nil
+
+        let coordinator = AudiogramImportCoordinator(
+            healthKitService: healthKitService,
+            repository: repository
+        )
+
+        let state = await coordinator.evaluatePrerequisite()
+        #expect(state == .permissionDenied)
+    }
+
+    @Test
+    func evaluatePrerequisiteImportsWhenStatusIsDeniedButReadAccessWorks() async {
+        let now = Date()
+        let sample = HealthKitAudiogramSample(
+            sampleUUID: UUID(),
+            measuredAt: now,
+            sourceName: "Health",
+            deviceName: "iPhone",
+            points: [
+                AudiogramPoint(
+                    frequencyHz: 1000,
+                    leftEarDBHL: 15,
+                    rightEarDBHL: 18,
+                    tests: []
+                )
+            ]
+        )
+
+        let healthKitService = MockHealthKitAudiogramService()
+        healthKitService.status = .denied
+        healthKitService.samples = [sample]
+
+        let repository = MockAudiogramRepository()
+        repository.latestAudiogram = nil
+        repository.persistedInsertCount = 1
+        repository.latestAfterSave = AudiogramRecord(
+            id: UUID(),
+            measuredAt: now,
+            source: "healthkit",
+            headphoneName: "iPhone",
+            healthKitSampleUUID: sample.sampleUUID,
+            points: sample.points
+        )
+
+        let coordinator = AudiogramImportCoordinator(
+            healthKitService: healthKitService,
+            repository: repository
+        )
+
+        let state = await coordinator.evaluatePrerequisite()
+        #expect(state == .met(latestMeasuredAt: now))
+    }
+
+    @Test
     func importFromHealthKitPersistsNewSamples() async throws {
         let now = Date()
         let sample = HealthKitAudiogramSample(

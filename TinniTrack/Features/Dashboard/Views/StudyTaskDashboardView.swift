@@ -7,10 +7,18 @@ import SwiftUI
 import UIKit
 
 struct StudyTaskDashboardView: View {
+    private enum OrientationStep {
+        case hearingTest
+        case importAudiogram
+        case nextSteps
+    }
+
     let study: Study
 
     @Environment(\.openURL) private var openURL
     @StateObject private var viewModel: StudyTaskDashboardViewModel
+    @State private var isOrientationPresented = false
+    @State private var orientationStep: OrientationStep = .hearingTest
 
     init(
         study: Study,
@@ -35,22 +43,8 @@ struct StudyTaskDashboardView: View {
             .refreshable {
                 await viewModel.refresh()
             }
-            .alert(
-                "Info",
-                isPresented: Binding(
-                    get: { viewModel.bannerMessage != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            viewModel.dismissBanner()
-                        }
-                    }
-                )
-            ) {
-                Button("OK", role: .cancel) {
-                    viewModel.dismissBanner()
-                }
-            } message: {
-                Text(viewModel.bannerMessage ?? "")
+            .sheet(isPresented: $isOrientationPresented, onDismiss: handleOrientationDismissed) {
+                orientationSheet
             }
     }
 
@@ -61,73 +55,24 @@ struct StudyTaskDashboardView: View {
             ProgressView("Checking study prerequisites…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(uiColor: .systemGroupedBackground))
-        case .blocked(let state):
-            blockedContent(for: state)
+        case .blocked:
+            orientationRequiredContent
         case .ready(let latestAudiogramDate):
             readyContent(latestAudiogramDate: latestAudiogramDate)
         }
     }
 
-    @ViewBuilder
-    private func blockedContent(for state: AudiogramPrerequisiteState) -> some View {
+    private var orientationRequiredContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                switch state {
-                case .needsPermission:
-                    prerequisiteCard(
-                        title: "Apple Health Access Required",
-                        message: "Study No. 1 requires importing your audiogram from Apple Health before tasks can start."
-                    )
+            VStack(alignment: .leading, spacing: 18) {
+                prerequisiteCard(
+                    title: "Welcome. Thanks for choosing to participate in this study!",
+                    message: "Before tasks can start, complete a short orientation to get your hearing-test baseline set up."
+                )
 
-                    actionButton(
-                        title: viewModel.isSyncing ? "Connecting…" : "Connect Apple Health",
-                        isPrimary: true,
-                        isLoading: viewModel.isSyncing
-                    ) {
-                        Task { await viewModel.importOrSyncAudiograms() }
-                    }
-
-                    actionButton(title: "Open App Settings", isPrimary: false) {
-                        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else {
-                            return
-                        }
-                        openURL(settingsURL)
-                    }
-                case .noAudiogramInHealth:
-                    prerequisiteCard(
-                        title: "No Audiogram Found",
-                        message: "Complete a hearing test in Apple Health or Settings, then return here and retry import."
-                    )
-
-                    actionButton(title: "Open Health App", isPrimary: false) {
-                        guard let healthAppURL = URL(string: "x-apple-health://") else {
-                            return
-                        }
-                        openURL(healthAppURL)
-                    }
-
-                    actionButton(
-                        title: viewModel.isSyncing ? "Retrying…" : "Retry Import",
-                        isPrimary: true,
-                        isLoading: viewModel.isSyncing
-                    ) {
-                        Task { await viewModel.importOrSyncAudiograms() }
-                    }
-                case .error(let message):
-                    prerequisiteCard(
-                        title: "Import Unavailable",
-                        message: message
-                    )
-
-                    actionButton(
-                        title: viewModel.isSyncing ? "Retrying…" : "Try Again",
-                        isPrimary: true,
-                        isLoading: viewModel.isSyncing
-                    ) {
-                        Task { await viewModel.importOrSyncAudiograms() }
-                    }
-                case .met:
-                    EmptyView()
+                actionButton(title: "Begin Orientation", isPrimary: true) {
+                    orientationStep = .hearingTest
+                    isOrientationPresented = true
                 }
             }
             .padding(20)
@@ -173,6 +118,199 @@ struct StudyTaskDashboardView: View {
         .listStyle(.insetGrouped)
     }
 
+    private var orientationSheet: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    switch orientationStep {
+                    case .hearingTest:
+                        orientationHearingTestStep
+                    case .importAudiogram:
+                        orientationImportStep
+                    case .nextSteps:
+                        orientationNextStepsPlaceholder
+                    }
+                }
+                .padding(20)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("Study Orientation")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if orientationStep != .hearingTest {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            moveToPreviousOrientationStep()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.headline)
+                        }
+                        .accessibilityLabel("Back")
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") {
+                        isOrientationPresented = false
+                    }
+                }
+            }
+        }
+        .interactiveDismissDisabled(true)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.hidden)
+    }
+
+    private var orientationHearingTestStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Step 1")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+
+            hearingTestInstructions
+
+            actionButton(title: "Continue", isPrimary: true) {
+                orientationStep = .importAudiogram
+            }
+        }
+    }
+
+    private var orientationImportStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Step 2")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+
+            importStateContent
+
+            actionButton(title: "Continue", isPrimary: true) {
+                orientationStep = .nextSteps
+            }
+            .disabled(!viewModel.isAudiogramPrerequisiteMet)
+            .opacity(viewModel.isAudiogramPrerequisiteMet ? 1 : 0.5)
+        }
+        .task {
+            await viewModel.checkOrientationImportStatus()
+        }
+    }
+
+    private var orientationNextStepsPlaceholder: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Step 3")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .tracking(0.8)
+                .foregroundStyle(.secondary)
+
+            prerequisiteCard(
+                title: "More Orientation Is Coming Next",
+                message: "Your audiogram baseline is ready. We will add the remaining study walkthrough steps in a follow-up update."
+            )
+
+            actionButton(title: "Finish Orientation", isPrimary: true) {
+                isOrientationPresented = false
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var importStateContent: some View {
+        switch viewModel.orientationImportState {
+        case .waitingForPermission:
+            prerequisiteCard(
+                title: "Connect Apple Health",
+                message: "Allow Apple Health access so we can import your hearing test into the study."
+            )
+
+            actionButton(
+                title: viewModel.isSyncing ? "Connecting…" : "Connect Apple Health",
+                isPrimary: true,
+                isLoading: viewModel.isSyncing
+            ) {
+                Task { await viewModel.connectAppleHealthForOrientation() }
+            }
+        case .requestingOrChecking:
+            ProgressView("Checking hearing test import…")
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+        case .success(let hearingTestDate):
+            prerequisiteCard(
+                title: "Hearing Test Imported",
+                message: successMessageForHearingTestDate(hearingTestDate)
+            )
+
+        case .authorizedNoHearingTest:
+            prerequisiteCard(
+                title: "No Hearing Test Found Yet",
+                message: "We can access your health data, but we aren't seeing a hearing test yet."
+            )
+
+            hearingTestInstructions
+
+            actionButton(
+                title: viewModel.isSyncing ? "Checking…" : "Check Again",
+                isPrimary: true,
+                isLoading: viewModel.isSyncing
+            ) {
+                Task { await viewModel.connectAppleHealthForOrientation() }
+            }
+
+        case .permissionDenied:
+            prerequisiteCard(
+                title: "Permission Required",
+                message: "You need to approve access to hearing test data to continue. Open the Health app and enable access for TinniTrack, then come back and check again."
+            )
+
+            actionButton(title: "Open Health App", isPrimary: false) {
+                guard let healthAppURL = URL(string: "x-apple-health://") else {
+                    return
+                }
+                openURL(healthAppURL)
+            }
+
+            actionButton(
+                title: viewModel.isSyncing ? "Checking…" : "Check Again",
+                isPrimary: true,
+                isLoading: viewModel.isSyncing
+            ) {
+                Task { await viewModel.checkOrientationImportStatus() }
+            }
+
+        case .error(let message):
+            prerequisiteCard(
+                title: "Import Unavailable",
+                message: message
+            )
+
+            actionButton(
+                title: viewModel.isSyncing ? "Retrying…" : "Try Again",
+                isPrimary: true,
+                isLoading: viewModel.isSyncing
+            ) {
+                Task { await viewModel.connectAppleHealthForOrientation() }
+            }
+        }
+    }
+
+    private var hearingTestInstructions: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            prerequisiteCard(
+                title: "Take an Apple Hearing Test",
+                message: "For this study, we need you to take a hearing test. You must be using a set of Apple AirPods Pro 2 or AirPods Pro 3. With your AirPods in your ears and connected to your paired iPhone, go to Settings > your AirPods. Tap Take a Hearing Test, and come back here when you are done."
+            )
+
+            Link(
+                "For further help with how to take an Apple Hearing test, click here.",
+                destination: URL(string: "https://support.apple.com/en-us/120991")!
+            )
+            .font(.subheadline)
+            .fontWeight(.semibold)
+        }
+    }
+
     private func prerequisiteCard(title: String, message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
@@ -213,11 +351,42 @@ struct StudyTaskDashboardView: View {
         .shadow(color: .black.opacity(isPrimary ? 0 : 0.08), radius: 3, x: 0, y: 1)
     }
 
+    private func successMessageForHearingTestDate(_ date: Date?) -> String {
+        guard let date else {
+            return "Success! We got your hearing test."
+        }
+        return "Success! We got your hearing test from \(Self.hearingTestDateFormatter.string(from: date))."
+    }
+
+    private func handleOrientationDismissed() {
+        orientationStep = .hearingTest
+        Task { await viewModel.refresh() }
+    }
+
+    private func moveToPreviousOrientationStep() {
+        switch orientationStep {
+        case .hearingTest:
+            break
+        case .importAudiogram:
+            orientationStep = .hearingTest
+        case .nextSteps:
+            orientationStep = .importAudiogram
+        }
+    }
+
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
+        return formatter
+    }()
+
+    private static let hearingTestDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateStyle = .long
+        formatter.timeStyle = .none
         return formatter
     }()
 }

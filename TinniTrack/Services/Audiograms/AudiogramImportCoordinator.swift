@@ -53,17 +53,25 @@ final class AudiogramImportCoordinator: AudiogramImportCoordinating {
             }
 
             switch healthKitService.readAuthorizationStatus() {
-            case .notDetermined, .denied:
+            case .notDetermined:
                 return .needsPermission
             case .unavailable:
                 return .error(message: AudiogramImportCoordinatorError.healthDataUnavailable.localizedDescription)
-            case .authorized:
-                let importResult = try await importAuthorizedData()
-                switch importResult {
-                case .imported(_, let latestMeasuredAt), .noNewRecords(let latestMeasuredAt):
-                    return .met(latestMeasuredAt: latestMeasuredAt)
-                case .noAudiogramInHealth:
-                    return .noAudiogramInHealth
+            case .authorized, .denied:
+                do {
+                    let importResult = try await importAuthorizedData()
+                    switch importResult {
+                    case .imported(_, let latestMeasuredAt), .noNewRecords(let latestMeasuredAt):
+                        return .met(latestMeasuredAt: latestMeasuredAt)
+                    case .noAudiogramInHealth:
+                        return .noAudiogramInHealth
+                    }
+                } catch {
+                    let mappedError = mapToCoordinatorError(error)
+                    if mappedError == .authorizationDenied {
+                        return .permissionDenied
+                    }
+                    return .error(message: mappedError.localizedDescription)
                 }
             }
         } catch {
@@ -75,20 +83,13 @@ final class AudiogramImportCoordinator: AudiogramImportCoordinating {
         switch healthKitService.readAuthorizationStatus() {
         case .authorized:
             return try await importAuthorizedData()
-        case .notDetermined:
+        case .notDetermined, .denied:
             do {
                 try await healthKitService.requestReadAuthorization()
             } catch {
                 throw mapToCoordinatorError(error)
             }
-
-            guard healthKitService.readAuthorizationStatus() == .authorized else {
-                throw AudiogramImportCoordinatorError.authorizationDenied
-            }
-
             return try await importAuthorizedData()
-        case .denied:
-            throw AudiogramImportCoordinatorError.authorizationDenied
         case .unavailable:
             throw AudiogramImportCoordinatorError.healthDataUnavailable
         }

@@ -14,9 +14,18 @@ final class StudyTaskDashboardViewModel: ObservableObject {
         case ready(latestAudiogramDate: Date?)
     }
 
+    enum OrientationImportState: Equatable {
+        case waitingForPermission
+        case requestingOrChecking
+        case success(hearingTestDate: Date?)
+        case authorizedNoHearingTest
+        case permissionDenied
+        case error(message: String)
+    }
+
     @Published private(set) var contentState: ContentState = .loading
     @Published private(set) var isSyncing = false
-    @Published var bannerMessage: String?
+    @Published private(set) var orientationImportState: OrientationImportState = .requestingOrChecking
 
     private let study: Study
     private let coordinator: AudiogramImportCoordinating
@@ -31,58 +40,84 @@ final class StudyTaskDashboardViewModel: ObservableObject {
         StudyPrerequisiteRules.requiresAudiogramImport(for: study.slug)
     }
 
+    var isAudiogramPrerequisiteMet: Bool {
+        if case .ready = contentState {
+            return true
+        }
+        return false
+    }
+
     func loadIfNeeded() async {
         guard !hasLoadedOnce else { return }
         await refresh()
     }
 
     func refresh() async {
-        guard requiresAudiogramImport else {
-            contentState = .ready(latestAudiogramDate: nil)
-            hasLoadedOnce = true
-            return
-        }
-
-        contentState = .loading
-        let prerequisiteState = await coordinator.evaluatePrerequisite()
-        applyPrerequisiteState(prerequisiteState)
+        await evaluatePrerequisite(showLoadingState: true)
         hasLoadedOnce = true
     }
 
     func importOrSyncAudiograms() async {
+        await requestImportThenReevaluate()
+    }
+
+    func connectAppleHealthForOrientation() async {
+        await requestImportThenReevaluate()
+    }
+
+    func checkOrientationImportStatus() async {
+        await evaluatePrerequisite(showLoadingState: false)
+    }
+
+    private func requestImportThenReevaluate() async {
         guard requiresAudiogramImport else { return }
 
         isSyncing = true
-        defer { isSyncing = false }
+        orientationImportState = .requestingOrChecking
 
         do {
-            let result = try await coordinator.importFromHealthKit()
-            switch result {
-            case .imported(let newRecords, _):
-                let pluralized = newRecords == 1 ? "audiogram" : "audiograms"
-                bannerMessage = "Imported \(newRecords) new \(pluralized)."
-            case .noNewRecords:
-                bannerMessage = "No new audiograms to import."
-            case .noAudiogramInHealth:
-                bannerMessage = "No audiogram found in Apple Health."
-            }
+            _ = try await coordinator.importFromHealthKit()
         } catch {
-            bannerMessage = error.localizedDescription
+            // The prerequisite reevaluation below maps final UX state.
         }
 
-        await refresh()
+        isSyncing = false
+        await evaluatePrerequisite(showLoadingState: false)
     }
 
-    func dismissBanner() {
-        bannerMessage = nil
+    private func evaluatePrerequisite(showLoadingState: Bool) async {
+        guard requiresAudiogramImport else {
+            contentState = .ready(latestAudiogramDate: nil)
+            orientationImportState = .success(hearingTestDate: nil)
+            return
+        }
+
+        if showLoadingState {
+            contentState = .loading
+        }
+
+        orientationImportState = .requestingOrChecking
+        let prerequisiteState = await coordinator.evaluatePrerequisite()
+        applyPrerequisiteState(prerequisiteState)
     }
 
     private func applyPrerequisiteState(_ state: AudiogramPrerequisiteState) {
         switch state {
         case .met(let latestMeasuredAt):
             contentState = .ready(latestAudiogramDate: latestMeasuredAt)
-        case .needsPermission, .noAudiogramInHealth, .error:
+            orientationImportState = .success(hearingTestDate: latestMeasuredAt)
+        case .needsPermission:
             contentState = .blocked(state)
+            orientationImportState = .waitingForPermission
+        case .permissionDenied:
+            contentState = .blocked(state)
+            orientationImportState = .permissionDenied
+        case .noAudiogramInHealth:
+            contentState = .blocked(state)
+            orientationImportState = .authorizedNoHearingTest
+        case .error(let message):
+            contentState = .blocked(state)
+            orientationImportState = .error(message: message)
         }
     }
 }
