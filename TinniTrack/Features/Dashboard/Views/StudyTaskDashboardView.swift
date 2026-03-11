@@ -40,9 +40,6 @@ struct StudyTaskDashboardView: View {
             .task {
                 await viewModel.loadIfNeeded()
             }
-            .refreshable {
-                await viewModel.refresh()
-            }
             .sheet(isPresented: $isOrientationPresented, onDismiss: handleOrientationDismissed) {
                 orientationSheet
             }
@@ -82,6 +79,12 @@ struct StudyTaskDashboardView: View {
 
     private func readyContent(latestAudiogramDate: Date?) -> some View {
         List {
+            if let warning = viewModel.readySyncWarning {
+                Section {
+                    readyWarningCard(for: warning)
+                }
+            }
+
             if viewModel.requiresAudiogramImport {
                 Section("Audiogram Baseline") {
                     if let latestAudiogramDate {
@@ -356,6 +359,51 @@ struct StudyTaskDashboardView: View {
             return "Success! We got your hearing test."
         }
         return "Success! We got your hearing test from \(Self.hearingTestDateFormatter.string(from: date))."
+    }
+
+    private func readyWarningCard(
+        for warning: StudyTaskDashboardViewModel.ReadySyncWarning
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                Text(readyWarningTitle(for: warning))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+
+            Text(readyWarningMessage(for: warning))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func readyWarningTitle(
+        for warning: StudyTaskDashboardViewModel.ReadySyncWarning
+    ) -> String {
+        switch warning {
+        case .permissionDenied:
+            return "Health Access Needed for Sync"
+        case .noAudiogramInHealth:
+            return "No New Hearing Test Found"
+        case .error:
+            return "Unable to Sync from Health"
+        }
+    }
+
+    private func readyWarningMessage(
+        for warning: StudyTaskDashboardViewModel.ReadySyncWarning
+    ) -> String {
+        switch warning {
+        case .permissionDenied:
+            return "Tasks remain available, but we could not read hearing-test data. Re-enable Health access and tap Sync from Health again."
+        case .noAudiogramInHealth:
+            return "We can access your health data, but we are not seeing a hearing test yet."
+        case .error(let message):
+            return message
+        }
     }
 
     private func handleOrientationDismissed() {

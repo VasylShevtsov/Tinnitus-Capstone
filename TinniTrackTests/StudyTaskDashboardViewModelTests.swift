@@ -5,6 +5,24 @@ import Testing
 @MainActor
 struct StudyTaskDashboardViewModelTests {
     @Test
+    func refreshNeedsPermissionBeforeUnlockStaysBlocked() async {
+        let coordinator = MockAudiogramImportCoordinator()
+        coordinator.enqueuePrerequisite(.needsPermission)
+
+        let viewModel = StudyTaskDashboardViewModel(
+            study: Self.sampleStudyNo1(),
+            coordinator: coordinator
+        )
+
+        await viewModel.refresh()
+
+        #expect(viewModel.contentState == .blocked(.needsPermission))
+        #expect(viewModel.orientationImportState == .waitingForPermission)
+        #expect(viewModel.readySyncWarning == nil)
+        #expect(viewModel.isAudiogramPrerequisiteMet == false)
+    }
+
+    @Test
     func connectHealthThenImportSuccessUpdatesToReadyState() async {
         let hearingTestDate = Date(timeIntervalSince1970: 1_710_000_000)
         let coordinator = MockAudiogramImportCoordinator()
@@ -27,6 +45,7 @@ struct StudyTaskDashboardViewModelTests {
 
         #expect(viewModel.orientationImportState == .success(hearingTestDate: hearingTestDate))
         #expect(viewModel.contentState == .ready(latestAudiogramDate: hearingTestDate))
+        #expect(viewModel.readySyncWarning == nil)
         #expect(viewModel.isAudiogramPrerequisiteMet)
     }
 
@@ -47,6 +66,7 @@ struct StudyTaskDashboardViewModelTests {
 
         #expect(viewModel.orientationImportState == .authorizedNoHearingTest)
         #expect(viewModel.contentState == .blocked(.noAudiogramInHealth))
+        #expect(viewModel.readySyncWarning == nil)
         #expect(viewModel.isAudiogramPrerequisiteMet == false)
     }
 
@@ -64,6 +84,7 @@ struct StudyTaskDashboardViewModelTests {
 
         #expect(viewModel.orientationImportState == .permissionDenied)
         #expect(viewModel.contentState == .blocked(.permissionDenied))
+        #expect(viewModel.readySyncWarning == nil)
         #expect(viewModel.isAudiogramPrerequisiteMet == false)
     }
 
@@ -84,7 +105,97 @@ struct StudyTaskDashboardViewModelTests {
 
         #expect(viewModel.orientationImportState == .permissionDenied)
         #expect(viewModel.contentState == .blocked(.permissionDenied))
+        #expect(viewModel.readySyncWarning == nil)
         #expect(viewModel.isAudiogramPrerequisiteMet == false)
+    }
+
+    @Test
+    func refreshAfterUnlockPermissionDeniedKeepsReadyAndShowsWarning() async {
+        let hearingTestDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let coordinator = MockAudiogramImportCoordinator()
+        coordinator.enqueuePrerequisite(.met(latestMeasuredAt: hearingTestDate))
+        coordinator.enqueuePrerequisite(.permissionDenied)
+
+        let viewModel = StudyTaskDashboardViewModel(
+            study: Self.sampleStudyNo1(),
+            coordinator: coordinator
+        )
+
+        await viewModel.refresh()
+        await viewModel.refresh()
+
+        #expect(viewModel.contentState == .ready(latestAudiogramDate: hearingTestDate))
+        #expect(viewModel.orientationImportState == .permissionDenied)
+        #expect(viewModel.readySyncWarning == .permissionDenied)
+        #expect(viewModel.isAudiogramPrerequisiteMet)
+    }
+
+    @Test
+    func refreshAfterUnlockNoAudiogramKeepsReadyAndShowsWarning() async {
+        let hearingTestDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let coordinator = MockAudiogramImportCoordinator()
+        coordinator.enqueuePrerequisite(.met(latestMeasuredAt: hearingTestDate))
+        coordinator.enqueuePrerequisite(.noAudiogramInHealth)
+
+        let viewModel = StudyTaskDashboardViewModel(
+            study: Self.sampleStudyNo1(),
+            coordinator: coordinator
+        )
+
+        await viewModel.refresh()
+        await viewModel.refresh()
+
+        #expect(viewModel.contentState == .ready(latestAudiogramDate: hearingTestDate))
+        #expect(viewModel.orientationImportState == .authorizedNoHearingTest)
+        #expect(viewModel.readySyncWarning == .noAudiogramInHealth)
+        #expect(viewModel.isAudiogramPrerequisiteMet)
+    }
+
+    @Test
+    func refreshAfterUnlockErrorKeepsReadyAndShowsWarning() async {
+        let hearingTestDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let errorMessage = "Unable to sync at this time."
+        let coordinator = MockAudiogramImportCoordinator()
+        coordinator.enqueuePrerequisite(.met(latestMeasuredAt: hearingTestDate))
+        coordinator.enqueuePrerequisite(.error(message: errorMessage))
+
+        let viewModel = StudyTaskDashboardViewModel(
+            study: Self.sampleStudyNo1(),
+            coordinator: coordinator
+        )
+
+        await viewModel.refresh()
+        await viewModel.refresh()
+
+        #expect(viewModel.contentState == .ready(latestAudiogramDate: hearingTestDate))
+        #expect(viewModel.orientationImportState == .error(message: errorMessage))
+        #expect(viewModel.readySyncWarning == .error(message: errorMessage))
+        #expect(viewModel.isAudiogramPrerequisiteMet)
+    }
+
+    @Test
+    func refreshAfterUnlockMetAgainUpdatesDateAndClearsWarning() async {
+        let initialDate = Date(timeIntervalSince1970: 1_710_000_000)
+        let updatedDate = Date(timeIntervalSince1970: 1_720_000_000)
+        let coordinator = MockAudiogramImportCoordinator()
+        coordinator.enqueuePrerequisite(.met(latestMeasuredAt: initialDate))
+        coordinator.enqueuePrerequisite(.permissionDenied)
+        coordinator.enqueuePrerequisite(.met(latestMeasuredAt: updatedDate))
+
+        let viewModel = StudyTaskDashboardViewModel(
+            study: Self.sampleStudyNo1(),
+            coordinator: coordinator
+        )
+
+        await viewModel.refresh()
+        await viewModel.refresh()
+        #expect(viewModel.contentState == .ready(latestAudiogramDate: initialDate))
+        #expect(viewModel.readySyncWarning == .permissionDenied)
+
+        await viewModel.refresh()
+        #expect(viewModel.contentState == .ready(latestAudiogramDate: updatedDate))
+        #expect(viewModel.orientationImportState == .success(hearingTestDate: updatedDate))
+        #expect(viewModel.readySyncWarning == nil)
     }
 
     private static func sampleStudyNo1() -> Study {

@@ -23,13 +23,22 @@ final class StudyTaskDashboardViewModel: ObservableObject {
         case error(message: String)
     }
 
+    enum ReadySyncWarning: Equatable {
+        case permissionDenied
+        case noAudiogramInHealth
+        case error(message: String)
+    }
+
     @Published private(set) var contentState: ContentState = .loading
     @Published private(set) var isSyncing = false
     @Published private(set) var orientationImportState: OrientationImportState = .requestingOrChecking
+    @Published private(set) var readySyncWarning: ReadySyncWarning?
 
     private let study: Study
     private let coordinator: AudiogramImportCoordinating
     private var hasLoadedOnce = false
+    private var hasUnlockedTasks = false
+    private var latestUnlockedAudiogramDate: Date?
 
     init(study: Study, coordinator: AudiogramImportCoordinating) {
         self.study = study
@@ -53,7 +62,7 @@ final class StudyTaskDashboardViewModel: ObservableObject {
     }
 
     func refresh() async {
-        await evaluatePrerequisite(showLoadingState: true)
+        await evaluatePrerequisite(showLoadingState: !hasUnlockedTasks)
         hasLoadedOnce = true
     }
 
@@ -87,6 +96,9 @@ final class StudyTaskDashboardViewModel: ObservableObject {
 
     private func evaluatePrerequisite(showLoadingState: Bool) async {
         guard requiresAudiogramImport else {
+            hasUnlockedTasks = true
+            latestUnlockedAudiogramDate = nil
+            readySyncWarning = nil
             contentState = .ready(latestAudiogramDate: nil)
             orientationImportState = .success(hearingTestDate: nil)
             return
@@ -104,20 +116,47 @@ final class StudyTaskDashboardViewModel: ObservableObject {
     private func applyPrerequisiteState(_ state: AudiogramPrerequisiteState) {
         switch state {
         case .met(let latestMeasuredAt):
+            hasUnlockedTasks = true
+            latestUnlockedAudiogramDate = latestMeasuredAt
+            readySyncWarning = nil
             contentState = .ready(latestAudiogramDate: latestMeasuredAt)
             orientationImportState = .success(hearingTestDate: latestMeasuredAt)
         case .needsPermission:
-            contentState = .blocked(state)
             orientationImportState = .waitingForPermission
+            applyBlockedOrWarningState(for: state)
         case .permissionDenied:
-            contentState = .blocked(state)
             orientationImportState = .permissionDenied
+            applyBlockedOrWarningState(for: state)
         case .noAudiogramInHealth:
-            contentState = .blocked(state)
             orientationImportState = .authorizedNoHearingTest
+            applyBlockedOrWarningState(for: state)
         case .error(let message):
-            contentState = .blocked(state)
             orientationImportState = .error(message: message)
+            applyBlockedOrWarningState(for: state)
+        }
+    }
+
+    private func applyBlockedOrWarningState(for state: AudiogramPrerequisiteState) {
+        if hasUnlockedTasks {
+            contentState = .ready(latestAudiogramDate: latestUnlockedAudiogramDate)
+            readySyncWarning = warning(for: state)
+            return
+        }
+
+        contentState = .blocked(state)
+        readySyncWarning = nil
+    }
+
+    private func warning(for state: AudiogramPrerequisiteState) -> ReadySyncWarning? {
+        switch state {
+        case .met:
+            return nil
+        case .needsPermission, .permissionDenied:
+            return .permissionDenied
+        case .noAudiogramInHealth:
+            return .noAudiogramInHealth
+        case .error(let message):
+            return .error(message: message)
         }
     }
 }
