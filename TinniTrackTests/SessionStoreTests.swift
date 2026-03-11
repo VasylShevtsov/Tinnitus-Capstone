@@ -222,6 +222,32 @@ struct SessionStoreTests {
     }
 
     @Test
+    func checkEmailVerificationStatusDoesNotOverwriteRefreshError() async {
+        let auth = MockAuthService(currentSession: nil)
+        let profile = MockProfileService(profile: nil)
+        let pending = MockEmailVerificationPendingStore(
+            pending: PendingEmailVerification(
+                email: "pending@example.com",
+                createdAt: Date(),
+                lastResendAt: nil
+            )
+        )
+        let store = SessionStore(authService: auth, profileService: profile, emailVerificationPendingStore: pending)
+
+        await store.start()
+        auth.currentSessionError = AuthServiceError.transport("Network unavailable")
+
+        await store.checkEmailVerificationStatus()
+
+        #expect(store.state.route == .awaitingEmailVerification(email: "pending@example.com"))
+        if case .error(let message)? = store.state.banner {
+            #expect(message == "Network unavailable")
+        } else {
+            #expect(Bool(false), "Expected refresh error banner to remain visible")
+        }
+    }
+
+    @Test
     func concurrentRefreshRequestsRunSerialized() async {
         let recorder = CurrentSessionConcurrencyRecorder()
         let auth = MockAuthService(

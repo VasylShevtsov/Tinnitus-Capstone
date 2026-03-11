@@ -19,40 +19,38 @@ struct CompleteOnboardingView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Complete Profile") {
-                    TextField("First Name", text: $firstName)
-                    TextField("Last Name", text: $lastName)
-                    DatePicker("Date of Birth", selection: $dateOfBirth, in: ...Date(), displayedComponents: .date)
-                }
+        Form {
+            Section("Complete Profile") {
+                TextField("First Name", text: $firstName)
+                TextField("Last Name", text: $lastName)
+                DatePicker("Date of Birth", selection: $dateOfBirth, in: ...Date(), displayedComponents: .date)
+            }
 
-                Section {
-                    Button("Finish Onboarding") {
-                        Task {
-                            await sessionStore.completeOnboarding(
-                                firstName: firstName,
-                                lastName: lastName,
-                                dateOfBirth: dateOfBirth
-                            )
-                        }
+            Section {
+                Button("Finish Onboarding") {
+                    Task {
+                        await sessionStore.completeOnboarding(
+                            firstName: firstName,
+                            lastName: lastName,
+                            dateOfBirth: dateOfBirth
+                        )
                     }
-                    .disabled(!canSubmit || sessionStore.state.isBusy)
+                }
+                .disabled(!canSubmit || sessionStore.state.isBusy)
 
-                    Button("Sign Out", role: .destructive) {
-                        Task {
-                            await sessionStore.signOut()
-                        }
+                Button("Sign Out", role: .destructive) {
+                    Task {
+                        await sessionStore.signOut()
                     }
                 }
             }
-            .navigationTitle("Onboarding")
-            .onAppear {
-                if let profile = sessionStore.state.profile {
-                    firstName = profile.firstName ?? firstName
-                    lastName = profile.lastName ?? lastName
-                    dateOfBirth = profile.dateOfBirth ?? dateOfBirth
-                }
+        }
+        .navigationTitle("Onboarding")
+        .onAppear {
+            if let profile = sessionStore.state.profile {
+                firstName = profile.firstName ?? firstName
+                lastName = profile.lastName ?? lastName
+                dateOfBirth = profile.dateOfBirth ?? dateOfBirth
             }
         }
     }

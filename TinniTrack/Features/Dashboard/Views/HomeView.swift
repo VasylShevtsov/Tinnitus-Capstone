@@ -49,6 +49,7 @@ private enum Tab {
 }
 
 private struct DashboardTabView: View {
+    @Environment(\.scenePhase) private var scenePhase
     let firstName: String
     @ObservedObject var viewModel: HomeDashboardViewModel
 
@@ -74,8 +75,11 @@ private struct DashboardTabView: View {
         .task {
             await viewModel.loadIfNeeded()
         }
-        .refreshable {
-            await viewModel.refresh()
+        .onChange(of: scenePhase) { newPhase in
+            guard newPhase == .active else { return }
+            Task {
+                await viewModel.refreshForLifecycleEvent()
+            }
         }
     }
 
@@ -103,6 +107,22 @@ private struct DashboardTabView: View {
                 Label("No studies available at this time.", systemImage: "magnifyingglass")
             } description: {
                 Text("Please check back later.")
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 24)
+        case .failed(let message):
+            VStack(spacing: 12) {
+                ContentUnavailableView {
+                    Label("Unable to Load Studies", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                }
+
+                Button("Retry") {
+                    Task { await viewModel.refresh(retainingCurrentContent: false) }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(viewModel.isRefreshing)
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 24)
@@ -305,27 +325,6 @@ private struct StudyDetailView: View {
         "No compatible headphones for calibration workflows.",
         "Medical conditions that make headphone listening unsafe."
     ]
-}
-
-private struct StudyTaskDashboardView: View {
-    let study: Study
-
-    var body: some View {
-        List {
-            Section("Future Tasks") {
-                Text("No upcoming tasks yet.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Completed Tasks") {
-                Text("No completed tasks yet.")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle(study.title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
 }
 
 private struct ProfileTabView: View {
