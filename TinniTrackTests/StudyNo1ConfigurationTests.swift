@@ -33,6 +33,6 @@ struct StudyNo1ConfigurationTests {
     func taskConstantsMatchV1Protocol() {
         #expect(StudyNo1Configuration.slotHours == [9, 13, 17, 21])
         #expect(StudyNo1Configuration.windowMinutes == 60)
-        #expect(StudyNo1Configuration.ambientThresholdDB == 40)
+        #expect(StudyNo1Configuration.ambientThresholdDB == 45)
     }
 }

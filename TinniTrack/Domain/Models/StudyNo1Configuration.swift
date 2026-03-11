@@ -3,7 +3,7 @@ import Foundation
 enum StudyNo1Configuration {
     static let slotHours: [Int] = [9, 13, 17, 21]
     static let windowMinutes: Int = 60
-    static let ambientThresholdDB: Double = 40
+    static let ambientThresholdDB: Double = 45
 
     static func isSupportedHeadphoneRouteName(_ routeName: String) -> Bool {
         let normalized = routeName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()

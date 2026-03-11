@@ -41,7 +41,7 @@ struct LoudnessMatchTaskFlowViewModelTests {
         viewModel.start()
         routeMonitor.emit(route: AudioOutputRoute(name: "AirPods Pro", portType: "BluetoothA2DPOutput"))
 
-        ambientMonitor.emit(db: 45)
+        ambientMonitor.emit(db: 46)
         #expect(viewModel.isAmbientQuiet == false)
 
         viewModel.startMatching()
