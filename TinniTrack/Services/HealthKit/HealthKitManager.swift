@@ -2,34 +2,24 @@
 //  HealthKitManager.swift
 //  TinniTrack
 //
-//  HealthKit service implementation for fetching and importing hearing test data
-//
 
 import Foundation
 import HealthKit
 
-@MainActor
-final class HealthKitManager: HealthKitServiceProtocol {
-    private let healthStore = HKHealthStore()
-    
-    /// Standard audiogram frequencies (Hz)
-    private static let standardFrequencies: [Double] = [250, 500, 1000, 2000, 3000, 4000, 6000, 8000]
-    
-    // Track if we've simulated authorization for testing
-    private static var simulatedAuthorizationGranted = false
-    
-    // MARK: - HealthKitServiceProtocol Implementation
-    
-    func getAuthorizationStatus() -> HealthKitAuthorizationStatus {
-        // For simulator/testing: if we simulated authorization, return authorized
-        if Self.isSimulator() && Self.simulatedAuthorizationGranted {
-            return .authorized
+final class HealthKitManager: HealthKitAudiogramServiceProtocol {
+    private let healthStore: HKHealthStore
+
+    init(healthStore: HKHealthStore = HKHealthStore()) {
+        self.healthStore = healthStore
+    }
+
+    func readAuthorizationStatus() -> HealthKitReadAuthorizationStatus {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return .unavailable
         }
-        
+
         let audiogramType = HKObjectType.audiogramSampleType()
-        let status = healthStore.authorizationStatus(for: audiogramType)
-        
-        switch status {
+        switch healthStore.authorizationStatus(for: audiogramType) {
         case .notDetermined:
             return .notDetermined
         case .sharingDenied:
@@ -40,203 +30,189 @@ final class HealthKitManager: HealthKitServiceProtocol {
             return .notDetermined
         }
     }
-    
-    func requestHealthKitAuthorization() async throws {
-        print("📱 [HealthKitManager] requestHealthKitAuthorization() called")
-        
-        // Simulator workaround for testing
-        if Self.isSimulator() {
-            print("📱 [HealthKitManager] Running on simulator - simulating authorization")
-            Self.simulatedAuthorizationGranted = true
-            print("📱 [HealthKitManager] simulatedAuthorizationGranted = true")
-            return
-        }
-        
-        print("📱 [HealthKitManager] Running on real device - requesting real HealthKit access")
+
+    func requestReadAuthorization() async throws {
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("📱 [HealthKitManager] HealthKit data not available")
-            throw HealthKitError.noDataAvailable
+            throw HealthKitAudiogramServiceError.dataUnavailable
         }
-        
+
         let audiogramType = HKObjectType.audiogramSampleType()
+
         do {
             try await healthStore.requestAuthorization(toShare: [], read: [audiogramType])
-            print("📱 [HealthKitManager] Real authorization successful")
         } catch {
-            print("📱 [HealthKitManager] Real authorization failed: \(error)")
-            if getAuthorizationStatus() == .denied {
-                throw HealthKitError.authorizationDenied
-            }
-            throw HealthKitError.queryFailed(error.localizedDescription)
+            throw HealthKitAudiogramServiceError.queryFailed(error.localizedDescription)
+        }
+
+        if readAuthorizationStatus() == .denied {
+            throw HealthKitAudiogramServiceError.authorizationDenied
         }
     }
-    
-    func hasExistingHearingTests() async throws -> Bool {
-        let samples = try await fetchAudiogramsFromHealthKit()
-        return !samples.isEmpty
-    }
-    
-    func fetchAudiogramsFromHealthKit() async throws -> [HealthKitAudiogramSample] {
-        print("📱 [HealthKitManager] fetchAudiogramsFromHealthKit() called")
-        
+
+    func fetchAudiogramSamples() async throws -> [HealthKitAudiogramSample] {
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("📱 [HealthKitManager] HealthKit data not available")
-            throw HealthKitError.noDataAvailable
+            throw HealthKitAudiogramServiceError.dataUnavailable
         }
-        
-        let status = getAuthorizationStatus()
-        print("📱 [HealthKitManager] Authorization status: \(status)")
-        
-        switch status {
-        case .denied:
-            print("📱 [HealthKitManager] Authorization denied")
-            throw HealthKitError.authorizationDenied
+
+        switch readAuthorizationStatus() {
         case .notDetermined:
-            print("📱 [HealthKitManager] Authorization not determined")
-            throw HealthKitError.authorizationNotDetermined
+            throw HealthKitAudiogramServiceError.authorizationNotDetermined
+        case .denied:
+            throw HealthKitAudiogramServiceError.authorizationDenied
+        case .unavailable:
+            throw HealthKitAudiogramServiceError.dataUnavailable
         case .authorized:
-            print("📱 [HealthKitManager] Authorization granted")
             break
         }
-        
-        // On simulator, return mock data for testing
-        if Self.isSimulator() {
-            print("📱 [HealthKitManager] Running on simulator - returning mock data")
-            let mockData = Self.mockAudiogramSamples()
-            print("📱 [HealthKitManager] Returned \(mockData.count) mock audiogram samples")
-            return mockData
-        }
-        
-        print("📱 [HealthKitManager] Running on real device - querying HealthKit")
-        let audiogramType = HKObjectType.audiogramSampleType()
+
+        let sampleType = HKObjectType.audiogramSampleType()
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
         let samples: [HKSample] = try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(
-                sampleType: audiogramType,
+                sampleType: sampleType,
                 predicate: nil,
                 limit: HKObjectQueryNoLimit,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
+                sortDescriptors: [sort]
             ) { _, samples, error in
-                if let error = error {
-                    print("📱 [HealthKitManager] Query error: \(error)")
-                    continuation.resume(throwing: HealthKitError.queryFailed(error.localizedDescription))
-                } else {
-                    print("📱 [HealthKitManager] Query returned \(samples?.count ?? 0) samples")
-                    continuation.resume(returning: samples ?? [])
+                if let error {
+                    continuation.resume(
+                        throwing: HealthKitAudiogramServiceError.queryFailed(error.localizedDescription)
+                    )
+                    return
                 }
+                continuation.resume(returning: samples ?? [])
             }
-            
+
             healthStore.execute(query)
         }
-        
-        let audiogramSamples = samples.compactMap { sample -> HealthKitAudiogramSample? in
-            guard let audiogram = sample as? HKAudiogramSample else {
-                return nil
-            }
-            
-            // Extract frequency-threshold pairs from HKAudiogramSample
-            var pairs: [(frequency: Double, threshold: Double)] = []
 
-            for point in audiogram.sensitivityPoints {
-                let frequency = point.frequency.doubleValue(for: .hertz())
+        return samples.compactMap(parseAudiogramSample)
+    }
 
-                // HKAudiogramSensitivityPoint exposes leftEarSensitivity and rightEarSensitivity.
-                // Prefer the average when both are present; otherwise use the available ear.
-                let left = point.leftEarSensitivity?.doubleValue(for: .decibelHearingLevel())
-                let right = point.rightEarSensitivity?.doubleValue(for: .decibelHearingLevel())
-
-                let threshold: Double?
-                if let l = left, let r = right {
-                    threshold = (l + r) / 2.0
-                } else {
-                    threshold = left ?? right
-                }
-
-                if let threshold { pairs.append((frequency, threshold)) }
-            }
-
-            guard !pairs.isEmpty else { return nil }
-
-            // Sort by frequency to keep frequencies and thresholds aligned
-            let sorted = pairs.sorted { $0.frequency < $1.frequency }
-            let frequencies = sorted.map { $0.frequency }
-            let thresholds = sorted.map { $0.threshold }
-
-            return HealthKitAudiogramSample(
-                date: audiogram.startDate,
-                frequencies: frequencies,
-                thresholds: thresholds,
-                sourceApp: audiogram.sourceRevision.source.name
-            )
+    private func parseAudiogramSample(_ sample: HKSample) -> HealthKitAudiogramSample? {
+        guard let audiogram = sample as? HKAudiogramSample else {
+            return nil
         }
-        
-        print("📱 [HealthKitManager] Processed \(audiogramSamples.count) valid audiograms")
-        return audiogramSamples
+
+        let points = audiogram.sensitivityPoints
+            .compactMap(parsePoint)
+            .sorted { $0.frequencyHz < $1.frequencyHz }
+
+        guard !points.isEmpty else {
+            return nil
+        }
+
+        return HealthKitAudiogramSample(
+            sampleUUID: audiogram.uuid,
+            measuredAt: audiogram.endDate,
+            sourceName: audiogram.sourceRevision.source.name,
+            deviceName: audiogram.device?.name,
+            points: points
+        )
     }
-    
-    // MARK: - Private Helpers
-    
-    private static func isSimulator() -> Bool {
-        #if targetEnvironment(simulator)
-        return true
-        #else
-        return false
-        #endif
+
+    private func parsePoint(_ point: HKAudiogramSensitivityPoint) -> AudiogramPoint? {
+        let frequency = point.frequency.doubleValue(for: .hertz())
+
+        var leftEar: Double?
+        var rightEar: Double?
+
+        var tests: [AudiogramSensitivityTest] = []
+
+        if #available(iOS 18.1, *) {
+            tests = point.tests.map { test in
+                AudiogramSensitivityTest(
+                    side: Self.side(for: test.side),
+                    conduction: Self.conduction(for: test.type),
+                    masked: test.masked,
+                    sensitivityDBHL: test.sensitivity.doubleValue(for: .decibelHearingLevel())
+                )
+            }
+
+            leftEar = Self.preferredSensitivity(for: .left, tests: point.tests) ?? leftEar
+            rightEar = Self.preferredSensitivity(for: .right, tests: point.tests) ?? rightEar
+        } else {
+            let legacySensitivities = Self.legacyEarSensitivities(from: point)
+            leftEar = legacySensitivities.left
+            rightEar = legacySensitivities.right
+        }
+
+        guard leftEar != nil || rightEar != nil || !tests.isEmpty else {
+            return nil
+        }
+
+        return AudiogramPoint(
+            frequencyHz: frequency,
+            leftEarDBHL: leftEar,
+            rightEarDBHL: rightEar,
+            tests: tests
+        )
     }
-    
-    private static func mockAudiogramSamples() -> [HealthKitAudiogramSample] {
-        return [
-            HealthKitAudiogramSample(
-                date: Date(),
-                frequencies: [250, 500, 1000, 2000, 3000, 4000, 6000, 8000],
-                thresholds: [15, 20, 25, 30, 35, 40, 45, 50],
-                sourceApp: "Health"
-            )
-        ]
+
+    @available(iOS 18.1, *)
+    private static func preferredSensitivity(
+        for side: HKAudiogramSensitivityTestSide,
+        tests: [HKAudiogramSensitivityTest]
+    ) -> Double? {
+        let preferred = tests.first { $0.side == side && $0.type == .air }
+            ?? tests.first { $0.side == side }
+        return preferred?.sensitivity.doubleValue(for: .decibelHearingLevel())
+    }
+
+    @available(iOS 18.1, *)
+    private static func side(for side: HKAudiogramSensitivityTestSide) -> AudiogramSensitivityTest.Side {
+        switch side {
+        case .left:
+            return .left
+        case .right:
+            return .right
+        @unknown default:
+            return .unknown
+        }
+    }
+
+    @available(iOS 18.1, *)
+    private static func conduction(for type: HKAudiogramConductionType) -> String {
+        switch type {
+        case .air:
+            return "air"
+        @unknown default:
+            return "unknown"
+        }
+    }
+
+    @available(iOS, introduced: 13.0, deprecated: 18.1)
+    private static func legacyEarSensitivities(
+        from point: HKAudiogramSensitivityPoint
+    ) -> (left: Double?, right: Double?) {
+        let left = point.leftEarSensitivity?.doubleValue(for: .decibelHearingLevel())
+        let right = point.rightEarSensitivity?.doubleValue(for: .decibelHearingLevel())
+        return (left, right)
     }
 }
 
-// MARK: - Mock Implementation for Testing
+final class MockHealthKitManager: HealthKitAudiogramServiceProtocol {
+    var status: HealthKitReadAuthorizationStatus = .notDetermined
+    var samples: [HealthKitAudiogramSample] = []
+    var requestAuthorizationError: Error?
+    var fetchError: Error?
 
-final class MockHealthKitManager: HealthKitServiceProtocol {
-    var shouldReturnData = false
-    var authorizationStatus = HealthKitAuthorizationStatus.authorized
-    var shouldThrowError: HealthKitError?
-    
-    nonisolated func getAuthorizationStatus() -> HealthKitAuthorizationStatus {
-        return authorizationStatus
+    func readAuthorizationStatus() -> HealthKitReadAuthorizationStatus {
+        status
     }
-    
-    nonisolated func requestHealthKitAuthorization() async throws {
-        if let error = shouldThrowError {
-            throw error
+
+    func requestReadAuthorization() async throws {
+        if let requestAuthorizationError {
+            throw requestAuthorizationError
         }
+        status = .authorized
     }
-    
-    nonisolated func hasExistingHearingTests() async throws -> Bool {
-        if let error = shouldThrowError {
-            throw error
+
+    func fetchAudiogramSamples() async throws -> [HealthKitAudiogramSample] {
+        if let fetchError {
+            throw fetchError
         }
-        return shouldReturnData
-    }
-    
-    nonisolated func fetchAudiogramsFromHealthKit() async throws -> [HealthKitAudiogramSample] {
-        if let error = shouldThrowError {
-            throw error
-        }
-        
-        guard shouldReturnData else {
-            return []
-        }
-        
-        // Return mock data
-        return [
-            HealthKitAudiogramSample(
-                date: Date(),
-                frequencies: [250, 500, 1000, 2000, 3000, 4000, 6000, 8000],
-                thresholds: [20, 25, 30, 35, 40, 45, 50, 55],
-                sourceApp: "Health"
-            )
-        ]
+        return samples
     }
 }
-

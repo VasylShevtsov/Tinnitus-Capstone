@@ -14,7 +14,6 @@ final class SessionStore: ObservableObject {
             case unauthenticated
             case awaitingEmailVerification(email: String)
             case needsOnboarding(profile: Profile?)
-            case needsHealthKitSetup(profile: Profile)
             case ready(profile: Profile)
         }
 
@@ -29,8 +28,6 @@ final class SessionStore: ObservableObject {
             case updatingPassword
             case resendingVerificationEmail
             case checkingVerificationStatus
-            case importingHealthKitData
-            case skippingHealthKitSetup
         }
 
         enum Banner: Equatable {
@@ -75,8 +72,6 @@ final class SessionStore: ObservableObject {
         var profile: Profile? {
             switch route {
             case .needsOnboarding(let profile):
-                return profile
-            case .needsHealthKitSetup(let profile):
                 return profile
             case .ready(let profile):
                 return profile
@@ -209,26 +204,6 @@ final class SessionStore: ObservableObject {
             } catch {
                 setErrorBanner(from: error)
             }
-        }
-    }
-
-    func completeHealthKitSetup(with audiogramData: [AudiogramData]) async {
-        await execute(activity: .importingHealthKitData) { [self] in
-            do {
-                for audiogram in audiogramData {
-                    try await profileService.importAudiogramFromHealthKit(audiogram)
-                }
-                state.banner = .info("Health data imported successfully.")
-                await transitionFromHealthKitSetup()
-            } catch {
-                setErrorBanner(from: error)
-            }
-        }
-    }
-
-    func skipHealthKitSetup() async {
-        await execute(activity: .skippingHealthKitSetup, clearBanner: false) { [self] in
-            await transitionFromHealthKitSetup()
         }
     }
 
@@ -369,7 +344,7 @@ final class SessionStore: ObservableObject {
             let latestProfile = try await profileService.fetchMyProfile()
 
             if let latestProfile, latestProfile.isOnboardingComplete {
-                state.route = .needsHealthKitSetup(profile: latestProfile)
+                state.route = .ready(profile: latestProfile)
             } else {
                 state.route = .needsOnboarding(profile: latestProfile)
             }
@@ -381,15 +356,6 @@ final class SessionStore: ObservableObject {
                 state.route = routeForNoSession()
             }
         }
-    }
-
-    private func transitionFromHealthKitSetup() async {
-        if case .needsHealthKitSetup(let profile) = state.route {
-            state.route = .ready(profile: profile)
-            return
-        }
-
-        await refreshRoute(preserveRouteOnFailure: true)
     }
 
     private func setPendingEmailVerification(_ email: String) {

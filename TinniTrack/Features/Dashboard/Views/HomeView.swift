@@ -307,27 +307,6 @@ private struct StudyDetailView: View {
     ]
 }
 
-private struct StudyTaskDashboardView: View {
-    let study: Study
-
-    var body: some View {
-        List {
-            Section("Future Tasks") {
-                Text("No upcoming tasks yet.")
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("Completed Tasks") {
-                Text("No completed tasks yet.")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle(study.title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
 private struct ProfileTabView: View {
     @EnvironmentObject private var sessionStore: SessionStore
     @State private var isSigningOut = false

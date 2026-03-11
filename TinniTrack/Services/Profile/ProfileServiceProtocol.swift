@@ -8,5 +8,4 @@ import Foundation
 protocol ProfileServiceProtocol {
     func fetchMyProfile() async throws -> Profile?
     func completeOnboarding(firstName: String, lastName: String, dateOfBirth: Date) async throws
-    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws
 }

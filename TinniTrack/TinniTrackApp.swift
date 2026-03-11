@@ -73,7 +73,6 @@ enum SessionStoreFactory {
         case unauthenticated
         case awaitingEmailVerification(email: String)
         case authenticatedNeedsOnboarding
-        case authenticatedNeedsHealthKitSetup
         case authenticatedReady
     }
 
@@ -113,20 +112,6 @@ enum SessionStoreFactory {
                 onboardingCompletedAt: nil
             )
             route = .needsOnboarding(profile: profile)
-        case .authenticatedNeedsHealthKitSetup:
-            pending = nil
-            session = AuthSession(userID: previewUserID)
-            profile = Profile(
-                id: previewUserID,
-                participantID: 1001,
-                firstName: "Taylor",
-                lastName: "Rivers",
-                dateOfBirth: previewDateOfBirth,
-                timezone: "America/New_York",
-                createdAt: Date(),
-                onboardingCompletedAt: Date()
-            )
-            route = .needsHealthKitSetup(profile: profile!)
         case .authenticatedReady:
             pending = nil
             session = AuthSession(userID: previewUserID)
@@ -205,7 +190,6 @@ private final class NoopProfileService: ProfileServiceProtocol {
     func fetchMyProfile() async throws -> Profile? { nil }
 
     func completeOnboarding(firstName: String, lastName: String, dateOfBirth: Date) async throws {}
-    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws {}
 }
 
 #if DEBUG
@@ -271,8 +255,6 @@ private final class StaticProfileService: ProfileServiceProtocol {
             onboardingCompletedAt: Date()
         )
     }
-
-    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws {}
 }
 
 private final class InMemoryEmailVerificationPendingStore: EmailVerificationPendingStoring {

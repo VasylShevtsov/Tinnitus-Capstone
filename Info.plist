@@ -61,7 +61,5 @@
 	</array>
 	<key>NSHealthShareUsageDescription</key>
 	<string>We need access to your hearing test data from Apple Health to import and analyze your hearing health information for this research study.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>We may save your hearing test results back to Apple Health.</string>
 </dict>
 </plist>
