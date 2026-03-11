@@ -64,7 +64,7 @@ struct SessionStoreTests {
     }
 
     @Test
-    func startMovesToHealthKitSetupWhenProfileCompleted() async {
+    func startMovesToReadyWhenProfileCompleted() async {
         let userID = UUID()
         let auth = MockAuthService(currentSession: AuthSession(userID: userID))
         let profile = MockProfileService(
@@ -86,10 +86,10 @@ struct SessionStoreTests {
 
         await store.start()
 
-        if case .needsHealthKitSetup(let loadedProfile) = store.state.route {
+        if case .ready(let loadedProfile) = store.state.route {
             #expect(loadedProfile.id == userID)
         } else {
-            #expect(Bool(false), "Expected .needsHealthKitSetup route")
+            #expect(Bool(false), "Expected .ready route")
         }
         #expect(store.state.pendingVerificationEmail == nil)
     }
@@ -208,10 +208,10 @@ struct SessionStoreTests {
 
         await store.checkEmailVerificationStatus()
 
-        if case .needsHealthKitSetup = store.state.route {
+        if case .ready = store.state.route {
             #expect(Bool(true))
         } else {
-            #expect(Bool(false), "Expected existing .needsHealthKitSetup route to be preserved")
+            #expect(Bool(false), "Expected existing .ready route to be preserved")
         }
 
         if case .error(let message)? = store.state.banner {
@@ -400,8 +400,6 @@ private final class MockProfileService: ProfileServiceProtocol {
             onboardingCompletedAt: Date()
         )
     }
-
-    func importAudiogramFromHealthKit(_ audiogram: AudiogramData) async throws {}
 }
 
 private final class MockEmailVerificationPendingStore: EmailVerificationPendingStoring {
