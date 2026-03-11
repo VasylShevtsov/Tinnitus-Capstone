@@ -206,9 +206,6 @@ final class SessionStore: ObservableObject {
                     dateOfBirth: dateOfBirth
                 )
                 await refreshRoute(preserveRouteOnFailure: true)
-                if case .ready(let profile) = state.route {
-                    state.route = .needsHealthKitSetup(profile: profile)
-                }
             } catch {
                 setErrorBanner(from: error)
             }
@@ -372,7 +369,7 @@ final class SessionStore: ObservableObject {
             let latestProfile = try await profileService.fetchMyProfile()
 
             if let latestProfile, latestProfile.isOnboardingComplete {
-                state.route = .ready(profile: latestProfile)
+                state.route = .needsHealthKitSetup(profile: latestProfile)
             } else {
                 state.route = .needsOnboarding(profile: latestProfile)
             }

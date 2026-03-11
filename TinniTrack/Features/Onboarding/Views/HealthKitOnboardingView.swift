@@ -54,6 +54,8 @@ struct HealthKitOnboardingView: View {
                         loadingButton
                     } else if viewModel.hasHealthKitData {
                         importButton
+                    } else {
+                        connectButton
                     }
                     Button(action: {
                         viewModel.openHealthApp()
