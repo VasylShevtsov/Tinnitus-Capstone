@@ -51,6 +51,7 @@ struct LoginView: View {
 
                     Text("Welcome to TinniTrack")
                         .font(.system(.largeTitle, design: .default).weight(.bold))
+                        .foregroundStyle(.black)
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
                         .frame(maxWidth: .infinity, alignment: .center)
